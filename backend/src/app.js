@@ -9,6 +9,8 @@ import { apiLimiter } from './middleware/rateLimiter.js';
 import errorHandler from './middleware/errorHandler.js';
 import logger from './config/logger.js';
 import v1Routes from './routes/v1/index.js';
+import passport from 'passport';
+import setupPassport from './config/passport.js';
 
 // Create Express application
 const app = express();
@@ -57,6 +59,9 @@ app.use(express.urlencoded({ extended: true }));
 //    Without this, an attacker could send:
 //    { "email": { "$gt": "" } } to bypass login
 //app.use(mongoSanitize());
+// 7. PASSPORT — Initialize Passport for Google OAuth
+app.use(passport.initialize());
+setupPassport();
 
 // 7. MORGAN — HTTP request logging
 //    Logs every request to the console in development
