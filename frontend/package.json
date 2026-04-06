@@ -3,14 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test": "NODE_OPTIONS='--max-old-space-size=4096' vitest",
+    "test:ui": "NODE_OPTIONS='--max-old-space-size=4096' vitest --ui",
+    "test:coverage": "NODE_OPTIONS='--max-old-space-size=4096' vitest --coverage",
+    "test:run": "NODE_OPTIONS='--max-old-space-size=4096' vitest run"
   },
+
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "axios": "^1.14.0",

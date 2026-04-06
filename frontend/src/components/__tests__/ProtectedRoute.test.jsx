@@ -1,38 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-// ✅ Mock AuthContext BEFORE any imports that use it
+// We need to mock the AuthContext
+// "Mocking" means creating a fake version of a module
+// so we can control what it returns in tests
 vi.mock('../../context/AuthContext', () => ({
   useAuth: vi.fn(),
-}));
-
-// ✅ Mock react-hot-toast to prevent it from loading
-vi.mock('react-hot-toast', () => ({
-  default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
+  // vi.fn() creates a mock function
+  // We'll configure what it returns in each test
 }));
 
 import ProtectedRoute from '../shared/ProtectedRoute';
 import { useAuth } from '../../context/AuthContext';
 
+// Helper to render with Router (ProtectedRoute uses useLocation)
 const renderWithRouter = (ui) => {
   return render(
     <MemoryRouter>
       {ui}
     </MemoryRouter>
   );
+  // MemoryRouter is a router that doesn't touch the browser's URL
+  // Perfect for testing — we simulate navigation without a real browser
 };
 
 describe('ProtectedRoute', () => {
-  // ✅ Reset mocks before each test
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('should show loading spinner when auth is loading', () => {
+    // Configure mock: auth is still loading
     useAuth.mockReturnValue({
       user: null,
       loading: true,
@@ -45,8 +40,11 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>
     );
 
+    // Should show loading text, NOT the protected content
     expect(screen.getByText('Loading...')).toBeInTheDocument();
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    // screen.getByText → throws if not found (asserts it exists)
+    // screen.queryByText → returns null if not found (asserts it doesn't exist)
   });
 
   it('should render children when authenticated with correct role', () => {
@@ -78,6 +76,7 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>
     );
 
+    // Should NOT show protected content
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
@@ -94,7 +93,7 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>
     );
 
+    // Student should NOT see admin content
     expect(screen.queryByText('Admin Only Content')).not.toBeInTheDocument();
   });
 });
-export default ProtectedRoute;
