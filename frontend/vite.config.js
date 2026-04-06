@@ -1,40 +1,29 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(),
+    ...(process.env.NODE_ENV === 'test' ? [] : [tailwindcss()]),
   ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   server: {
     port: 5173,
     open: true,
   },
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'happy-dom',
     setupFiles: './src/test/setup.js',
-    
-    // ✅ KEY OPTIMIZATIONS
-    css: false,                      // Don't process Tailwind in tests
-    pool: 'forks',                 // Use threads instead of forks (less memory)
-    poolOptions: {
-    forks: {
-      singleFork: true,
-  },
-},
-    
-    
-    // ✅ Increase timeout
-    testTimeout: 15000,              // 15 seconds
-    hookTimeout: 15000,
-    
-    // ✅ Tell Vitest to ignore heavy dependencies in tests
-    deps: {
-      inline: [
-        /react-hot-toast/,           // Mock this instead of loading real module
-      ],
-    },
+    css: false,
+    isolate: true,
+    testTimeout: 10000,
+    hookTimeout: 10000,
   },
 });

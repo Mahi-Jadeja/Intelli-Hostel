@@ -1,100 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-
-// ✅ Mock AuthContext BEFORE any imports that use it
-vi.mock('../../context/AuthContext', () => ({
-  useAuth: vi.fn(),
-}));
-
-// ✅ Mock react-hot-toast to prevent it from loading
-vi.mock('react-hot-toast', () => ({
-  default: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
-import ProtectedRoute from '../shared/ProtectedRoute';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-const renderWithRouter = (ui) => {
-  return render(
-    <MemoryRouter>
-      {ui}
-    </MemoryRouter>
-  );
+/**
+ * ProtectedRoute - Guards routes based on auth state and role
+ *
+ * @param {string[]} allowedRoles
+ * @param {ReactNode} children
+ */
+const ProtectedRoute = ({ allowedRoles, children }) => {
+  const { user, loading, isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    const redirectPath =
+      user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard';
+
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return children;
 };
 
-describe('ProtectedRoute', () => {
-  // ✅ Reset mocks before each test
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should show loading spinner when auth is loading', () => {
-    useAuth.mockReturnValue({
-      user: null,
-      loading: true,
-      isAuthenticated: false,
-    });
-
-    renderWithRouter(
-      <ProtectedRoute allowedRoles={['student']}>
-        <div>Protected Content</div>
-      </ProtectedRoute>
-    );
-
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-  });
-
-  it('should render children when authenticated with correct role', () => {
-    useAuth.mockReturnValue({
-      user: { id: '123', name: 'Test', role: 'student' },
-      loading: false,
-      isAuthenticated: true,
-    });
-
-    renderWithRouter(
-      <ProtectedRoute allowedRoles={['student']}>
-        <div>Protected Content</div>
-      </ProtectedRoute>
-    );
-
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
-  });
-
-  it('should NOT render children when not authenticated', () => {
-    useAuth.mockReturnValue({
-      user: null,
-      loading: false,
-      isAuthenticated: false,
-    });
-
-    renderWithRouter(
-      <ProtectedRoute allowedRoles={['student']}>
-        <div>Protected Content</div>
-      </ProtectedRoute>
-    );
-
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-  });
-
-  it('should NOT render children when role does not match', () => {
-    useAuth.mockReturnValue({
-      user: { id: '123', name: 'Test', role: 'student' },
-      loading: false,
-      isAuthenticated: true,
-    });
-
-    renderWithRouter(
-      <ProtectedRoute allowedRoles={['admin']}>
-        <div>Admin Only Content</div>
-      </ProtectedRoute>
-    );
-
-    expect(screen.queryByText('Admin Only Content')).not.toBeInTheDocument();
-  });
-});
 export default ProtectedRoute;

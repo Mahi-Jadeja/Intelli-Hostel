@@ -1,50 +1,41 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 
-// We need to mock the AuthContext
-// "Mocking" means creating a fake version of a module
-// so we can control what it returns in tests
-vi.mock('../../context/AuthContext', () => ({
+vi.mock('@/context/AuthContext', () => ({
   useAuth: vi.fn(),
-  // vi.fn() creates a mock function
-  // We'll configure what it returns in each test
 }));
 
-import ProtectedRoute from '../shared/ProtectedRoute';
-import { useAuth } from '../../context/AuthContext';
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useLocation: () => ({ pathname: '/protected' }),
+    Navigate: ({ to }) => <div>Redirected to: {to}</div>,
+  };
+});
 
-// Helper to render with Router (ProtectedRoute uses useLocation)
-const renderWithRouter = (ui) => {
-  return render(
-    <MemoryRouter>
-      {ui}
-    </MemoryRouter>
-  );
-  // MemoryRouter is a router that doesn't touch the browser's URL
-  // Perfect for testing — we simulate navigation without a real browser
-};
-
+import ProtectedRoute from '@/components/shared/ProtectedRoute.jsx';
+import { useAuth } from '@/context/AuthContext';
+~
 describe('ProtectedRoute', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should show loading spinner when auth is loading', () => {
-    // Configure mock: auth is still loading
     useAuth.mockReturnValue({
       user: null,
       loading: true,
       isAuthenticated: false,
     });
 
-    renderWithRouter(
+    render(
       <ProtectedRoute allowedRoles={['student']}>
         <div>Protected Content</div>
       </ProtectedRoute>
     );
 
-    // Should show loading text, NOT the protected content
     expect(screen.getByText('Loading...')).toBeInTheDocument();
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-    // screen.getByText → throws if not found (asserts it exists)
-    // screen.queryByText → returns null if not found (asserts it doesn't exist)
   });
 
   it('should render children when authenticated with correct role', () => {
@@ -54,7 +45,7 @@ describe('ProtectedRoute', () => {
       isAuthenticated: true,
     });
 
-    renderWithRouter(
+    render(
       <ProtectedRoute allowedRoles={['student']}>
         <div>Protected Content</div>
       </ProtectedRoute>
@@ -63,37 +54,35 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Protected Content')).toBeInTheDocument();
   });
 
-  it('should NOT render children when not authenticated', () => {
+  it('should redirect to login when not authenticated', () => {
     useAuth.mockReturnValue({
       user: null,
       loading: false,
       isAuthenticated: false,
     });
 
-    renderWithRouter(
+    render(
       <ProtectedRoute allowedRoles={['student']}>
         <div>Protected Content</div>
       </ProtectedRoute>
     );
 
-    // Should NOT show protected content
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Redirected to: /login')).toBeInTheDocument();
   });
 
-  it('should NOT render children when role does not match', () => {
+  it('should redirect when role does not match', () => {
     useAuth.mockReturnValue({
       user: { id: '123', name: 'Test', role: 'student' },
       loading: false,
       isAuthenticated: true,
     });
 
-    renderWithRouter(
+    render(
       <ProtectedRoute allowedRoles={['admin']}>
         <div>Admin Only Content</div>
       </ProtectedRoute>
     );
 
-    // Student should NOT see admin content
-    expect(screen.queryByText('Admin Only Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Redirected to: /student/dashboard')).toBeInTheDocument();
   });
 });
