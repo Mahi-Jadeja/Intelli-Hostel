@@ -25,6 +25,8 @@ import StudentRoom from './pages/student/Room';
 // Error pages
 import NotFound from './pages/errors/NotFound';
 
+import StudentComplaints from './pages/student/Complaints';
+
 // Admin placeholder (we'll build real admin pages in later phases)
 const AdminPlaceholder = () => (
   <div className="p-8">
@@ -100,6 +102,7 @@ function App() {
               <Route path="dashboard" element={<StudentOverview />} />
               <Route path="profile" element={<StudentProfile />} />
               <Route path="room" element={<StudentRoom />} />
+              <Route path="complaints" element={<StudentComplaints />} />
               {/* These will be added in later phases: */}
               {/* <Route path="complaints" element={<StudentComplaints />} /> */}
               {/* <Route path="outpass" element={<StudentOutpass />} /> */}
