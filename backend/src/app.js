@@ -28,7 +28,7 @@ const app = express();
 app.use(helmet());
 
 // 2. CORS — Cross-Origin Resource Sharing
-//    Your frontend (localhost:5173) and backend (localhost:5000)
+//    Your frontend (localhost:5173) and backend (localhost:5001)
 //    are on DIFFERENT PORTS = different "origins"
 //    Browsers BLOCK requests between different origins by default
 //    CORS tells the browser: "It's okay, I trust this origin"
