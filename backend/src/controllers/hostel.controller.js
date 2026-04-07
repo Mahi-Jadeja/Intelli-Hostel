@@ -40,6 +40,7 @@ export const upsertHostelConfig = async (req, res, next) => {
     const {
       hostel_name,
       hostel_block,
+      block_gender,
       total_floors,
       rooms_per_floor,
       default_capacity = 3,
@@ -50,6 +51,7 @@ export const upsertHostelConfig = async (req, res, next) => {
       {
         hostel_name,
         hostel_block,
+        block_gender,
         total_floors,
         rooms_per_floor,
         default_capacity,

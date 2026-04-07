@@ -105,9 +105,10 @@ export const AuthProvider = ({ children }) => {
   // This prevents unnecessary re-renders of components that receive this function
 
   // ---- Register function ----
-  const registerUser = useCallback(async (name, email, password) => {
+    // ---- Register function ----
+  const registerUser = useCallback(async (payload) => {
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const response = await api.post('/auth/register', payload);
 
       const { token: newToken, user: userData } = response.data.data;
 

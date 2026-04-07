@@ -19,41 +19,41 @@ import { sendSuccess } from '../utils/response.js';
  */
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
-    // req.body has already been validated AND cleaned by Zod middleware
-    // Any extra fields (like 'role') have been stripped out
+    const { name, email, password, gender, branch, guardian } = req.body;
 
     // Step 1: Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return next(new AppError('Email already registered', 409));
-      // 409 = Conflict (resource already exists)
     }
 
-    // Step 2: Create the User document
-    // role is ALWAYS 'student' — hardcoded, not from req.body
+    // Step 2: Create User
     const user = await User.create({
       name,
       email,
-      password, // Will be hashed by the pre-save hook
-      role: 'student', // HARDCODED — this is the security fix
+      password,
+      role: 'student',
       provider: 'local',
     });
 
-    // Step 3: Create the Student profile
-    // Every student User gets a Student document for their profile
+    // Step 3: Create Student profile with required hostel-related fields
     await Student.create({
       user_id: user._id,
       name: user.name,
       email: user.email,
+      gender,
+      branch,
+      guardian: {
+        name: guardian.name,
+        phone: guardian.phone,
+        email: guardian.email,
+      },
     });
 
-    // Step 4: Generate JWT token
+    // Step 4: Generate token
     const token = generateToken(user);
 
     // Step 5: Send response
-    // We manually construct the user object to EXCLUDE sensitive fields
-    // Even though select: false hides password, we're extra careful
     sendSuccess(res, 201, 'Registration successful', {
       token,
       user: {
@@ -65,10 +65,6 @@ export const register = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
-    // next(error) passes the error to our global error handler
-    // The error handler formats it and sends the response
-    // This is why we don't need try-catch in EVERY controller —
-    // but we use it here because we want clean error flow
   }
 };
 

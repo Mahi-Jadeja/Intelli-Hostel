@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { BRANCHES, STUDENT_GENDERS } from '../constants/enums.js';
 
 /**
  * Profile update validation schema
@@ -6,9 +7,9 @@ import { z } from 'zod';
  * Students can update:
  *   ✅ Personal: name, phone, gender, dob, profile_pic
  *   ✅ Academic: college_id, branch, year, semester
- *   ✅ Guardian: guardian.name, guardian.phone
+ *   ✅ Guardian: guardian.name, guardian.phone, guardian.email
  *
- * Students CANNOT update (controlled by admin):
+ * Students CANNOT update:
  *   ❌ email, user_id
  *   ❌ room_no, hostel_block, floor, bed_no
  *   ❌ is_active, is_hosteller
@@ -28,23 +29,19 @@ export const updateProfileSchema = z.object({
     .optional(),
 
   gender: z
-    .enum(['male', 'female', 'other', ''], {
-      errorMap: () => ({ message: 'Gender must be male, female, or other' }),
+    .enum(STUDENT_GENDERS, {
+      errorMap: () => ({
+        message: 'Gender must be either male or female',
+      }),
     })
     .optional(),
 
-  dob: z
-    .string()
-    .optional(),
-    // We accept a date string (e.g., "2000-05-15")
-    // The controller will convert it to a Date object if needed
+  dob: z.string().optional(),
 
   profile_pic: z
     .string()
     .max(500000, 'Profile picture data is too large')
     .optional(),
-    // For now we accept a base64 string or URL
-    // In production you'd use file upload to S3/Cloudinary
 
   college_id: z
     .string()
@@ -53,9 +50,11 @@ export const updateProfileSchema = z.object({
     .optional(),
 
   branch: z
-    .string()
-    .trim()
-    .max(50, 'Branch cannot exceed 50 characters')
+    .enum(BRANCHES, {
+      errorMap: () => ({
+        message: 'Please select a valid branch',
+      }),
+    })
     .optional(),
 
   year: z
@@ -74,11 +73,23 @@ export const updateProfileSchema = z.object({
 
   guardian: z
     .object({
-      name: z.string().trim().max(50, 'Guardian name too long').optional(),
-      phone: z.string().trim().max(15, 'Guardian phone too long').optional(),
+      name: z
+        .string()
+        .trim()
+        .max(50, 'Guardian name too long')
+        .optional(),
+
+      phone: z
+        .string()
+        .trim()
+        .max(15, 'Guardian phone too long')
+        .optional(),
+
+      email: z
+        .string()
+        .trim()
+        .email('Please provide a valid guardian email')
+        .optional(),
     })
     .optional(),
-    // Nested object validation
-    // Zod handles nested objects naturally
-    // { guardian: { name: "Mrs. Smith", phone: "+91..." } }
 });

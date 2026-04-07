@@ -1,11 +1,8 @@
 import { z } from 'zod';
+import { BLOCK_GENDERS } from '../constants/enums.js';
 
 /**
- * Hostel config schema
- *
- * We use z.coerce.number() because form inputs usually send values as strings.
- * Example:
- *   "3" → automatically converted to 3
+ * Hostel block configuration validation
  */
 export const hostelConfigSchema = z.object({
   hostel_name: z
@@ -17,55 +14,50 @@ export const hostelConfigSchema = z.object({
   hostel_block: z
     .string({ required_error: 'Hostel block is required' })
     .trim()
-    .transform((value) => value.toUpperCase())
-    .refine((value) => /^[A-Z]$/.test(value), {
-      message: 'Hostel block must be a single uppercase letter like A or B',
+    .min(1, 'Hostel block is required')
+    .max(1, 'Hostel block must be a single character')
+    .transform((value) => value.toUpperCase()),
+
+  block_gender: z.enum(BLOCK_GENDERS, {
+    errorMap: () => ({
+      message: 'Block gender must be either male or female',
     }),
+  }),
 
   total_floors: z.coerce
     .number({ required_error: 'Total floors is required' })
     .int('Total floors must be a whole number')
-    .min(1, 'Total floors must be at least 1')
-    .max(10, 'Total floors cannot exceed 10'),
+    .min(1, 'Must have at least 1 floor')
+    .max(10, 'Cannot exceed 10 floors'),
 
   rooms_per_floor: z.coerce
     .number({ required_error: 'Rooms per floor is required' })
     .int('Rooms per floor must be a whole number')
-    .min(1, 'Rooms per floor must be at least 1')
-    .max(20, 'Rooms per floor cannot exceed 20'),
+    .min(1, 'Must have at least 1 room per floor')
+    .max(20, 'Cannot exceed 20 rooms per floor'),
 
   default_capacity: z.coerce
     .number()
-    .int('Capacity must be a whole number')
+    .int('Default capacity must be a whole number')
     .min(1, 'Capacity must be at least 1')
     .max(6, 'Capacity cannot exceed 6')
-    .optional(),
+    .default(3),
 });
 
 /**
- * Generate rooms schema
- *
- * Admin only needs to specify the block.
- * The backend reads the rest from HostelConfig.
+ * Generate rooms validation
  */
 export const generateRoomsSchema = z.object({
   hostel_block: z
     .string({ required_error: 'Hostel block is required' })
     .trim()
-    .transform((value) => value.toUpperCase())
-    .refine((value) => /^[A-Z]$/.test(value), {
-      message: 'Hostel block must be a single uppercase letter',
-    }),
+    .min(1, 'Hostel block is required')
+    .max(1, 'Hostel block must be a single character')
+    .transform((value) => value.toUpperCase()),
 });
 
 /**
- * Allocate room schema
- *
- * Admin chooses:
- * - which student
- * - which room
- *
- * Bed number is assigned automatically by backend.
+ * Manual allocate validation
  */
 export const allocateRoomSchema = z.object({
   student_id: z

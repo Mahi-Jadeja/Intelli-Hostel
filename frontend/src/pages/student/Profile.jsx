@@ -1,19 +1,16 @@
 import { useState, useEffect } from 'react';
-import { User, Phone, BookOpen, Building2, Shield, Save } from 'lucide-react';
+import { User, BookOpen, Building2, Shield, Save } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Skeleton from '../../components/ui/Skeleton';
 import studentService from '../../services/student.service';
 import toast from 'react-hot-toast';
+import { BRANCHES, STUDENT_GENDERS } from '../../constants/enums';
 
 const Profile = () => {
-  // ---- State ----
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // formData holds the EDITABLE copy of the profile
-  // When user types, formData changes but profile (original) stays the same
-  // This lets us compare and know what actually changed
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -26,10 +23,10 @@ const Profile = () => {
     guardian: {
       name: '',
       phone: '',
+      email: '',
     },
   });
 
-  // ---- Fetch profile on mount ----
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -39,15 +36,11 @@ const Profile = () => {
 
         setProfile(data);
 
-        // Populate form with existing data
         setFormData({
           name: data.name || '',
           phone: data.phone || '',
           gender: data.gender || '',
           dob: data.dob ? data.dob.split('T')[0] : '',
-          // MongoDB stores dates as ISO strings: "2000-05-15T00:00:00.000Z"
-          // .split('T')[0] extracts just "2000-05-15"
-          // This format is what <input type="date"> expects
           college_id: data.college_id || '',
           branch: data.branch || '',
           year: data.year || 1,
@@ -55,6 +48,7 @@ const Profile = () => {
           guardian: {
             name: data.guardian?.name || '',
             phone: data.guardian?.phone || '',
+            email: data.guardian?.email || '',
           },
         });
       } catch (error) {
@@ -68,17 +62,11 @@ const Profile = () => {
     fetchProfile();
   }, []);
 
-  // ---- Handle input changes ----
-  // This ONE function handles ALL input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Destructure the event target to get the input's name and value
-    // <input name="phone" value="123"> → name="phone", value="123"
 
-    // Check if it's a guardian field
     if (name.startsWith('guardian.')) {
-      // name = "guardian.name" or "guardian.phone"
-      const field = name.split('.')[1]; // Extract "name" or "phone"
+      const field = name.split('.')[1];
 
       setFormData((prev) => ({
         ...prev,
@@ -87,14 +75,6 @@ const Profile = () => {
           [field]: value,
         },
       }));
-      // Explanation:
-      // ...prev = keep all existing form data
-      // guardian: { ...prev.guardian, [field]: value }
-      //   = keep existing guardian fields, but update the changed one
-      //
-      // [field] is a "computed property name"
-      // If field = "name", then [field] = "name"
-      // It's like writing { name: value } but the key is dynamic
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -103,23 +83,18 @@ const Profile = () => {
     }
   };
 
-  // ---- Handle number input changes ----
-  // Numbers need parseInt conversion
   const handleNumberChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: parseInt(value, 10) || 1,
-      // parseInt converts string "3" to number 3
-      // || 1 provides fallback if parsing fails (NaN → 1)
     }));
   };
 
-  // ---- Handle form submission ----
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Client-side validation
     if (formData.name.trim().length < 2) {
       toast.error('Name must be at least 2 characters');
       return;
@@ -128,8 +103,6 @@ const Profile = () => {
     setSaving(true);
 
     try {
-      // Build the update payload
-      // Only include fields that actually changed
       const updates = {};
 
       if (formData.name !== profile.name) updates.name = formData.name;
@@ -140,30 +113,26 @@ const Profile = () => {
       if (formData.year !== profile.year) updates.year = formData.year;
       if (formData.semester !== profile.semester) updates.semester = formData.semester;
 
-      // Handle date comparison
       const originalDob = profile.dob ? profile.dob.split('T')[0] : '';
       if (formData.dob !== originalDob) updates.dob = formData.dob;
 
-      // Handle guardian
       const guardianChanged =
         formData.guardian.name !== (profile.guardian?.name || '') ||
-        formData.guardian.phone !== (profile.guardian?.phone || '');
+        formData.guardian.phone !== (profile.guardian?.phone || '') ||
+        formData.guardian.email !== (profile.guardian?.email || '');
 
       if (guardianChanged) {
         updates.guardian = formData.guardian;
       }
 
-      // Check if anything actually changed
       if (Object.keys(updates).length === 0) {
         toast('No changes to save', { icon: 'ℹ️' });
         setSaving(false);
         return;
       }
 
-      // Send update request
       const response = await studentService.updateProfile(updates);
 
-      // Update the original profile with new data
       setProfile(response.data.data.student);
       toast.success('Profile updated successfully!');
     } catch (error) {
@@ -175,7 +144,6 @@ const Profile = () => {
     }
   };
 
-  // ---- Loading State ----
   if (loading) {
     return (
       <div>
@@ -206,7 +174,6 @@ const Profile = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name *
@@ -222,7 +189,6 @@ const Profile = () => {
               />
             </div>
 
-            {/* Email (read-only) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -236,7 +202,6 @@ const Profile = () => {
               <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
             </div>
 
-            {/* Phone */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone Number
@@ -252,7 +217,6 @@ const Profile = () => {
               />
             </div>
 
-            {/* Gender */}
             <div>
               <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
                 Gender
@@ -265,13 +229,14 @@ const Profile = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all bg-white"
               >
                 <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                {STUDENT_GENDERS.map((gender) => (
+                  <option key={gender.value} value={gender.value}>
+                    {gender.label}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Date of Birth */}
             <div>
               <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-1">
                 Date of Birth
@@ -298,7 +263,6 @@ const Profile = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* College ID / PRN */}
             <div>
               <label htmlFor="college_id" className="block text-sm font-medium text-gray-700 mb-1">
                 College ID / PRN
@@ -314,23 +278,26 @@ const Profile = () => {
               />
             </div>
 
-            {/* Branch */}
             <div>
               <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-1">
                 Branch / Department
               </label>
-              <input
+              <select
                 id="branch"
                 name="branch"
-                type="text"
                 value={formData.branch}
                 onChange={handleChange}
-                placeholder="e.g., Computer Science"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all bg-white"
+              >
+                <option value="">Select Branch</option>
+                {BRANCHES.map((branch) => (
+                  <option key={branch} value={branch}>
+                    {branch}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Year */}
             <div>
               <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-1">
                 Year
@@ -350,7 +317,6 @@ const Profile = () => {
               </select>
             </div>
 
-            {/* Semester */}
             <div>
               <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-1">
                 Semester
@@ -372,7 +338,7 @@ const Profile = () => {
           </div>
         </Card>
 
-        {/* ======== HOSTEL DETAILS (Read-Only) ======== */}
+        {/* ======== HOSTEL DETAILS ======== */}
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <Building2 className="w-5 h-5 text-indigo-600" />
@@ -385,7 +351,6 @@ const Profile = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* All hostel fields are disabled — only admin can change these */}
             {[
               { label: 'Block', value: profile?.hostel_block || 'Not assigned' },
               { label: 'Room No', value: profile?.room_no || 'Not assigned' },
@@ -416,8 +381,7 @@ const Profile = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Guardian Name */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="guardian.name" className="block text-sm font-medium text-gray-700 mb-1">
                 Guardian Name
@@ -433,7 +397,6 @@ const Profile = () => {
               />
             </div>
 
-            {/* Guardian Phone */}
             <div>
               <label htmlFor="guardian.phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Guardian Phone
@@ -447,6 +410,24 @@ const Profile = () => {
                 placeholder="Enter guardian's phone"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
               />
+            </div>
+
+            <div>
+              <label htmlFor="guardian.email" className="block text-sm font-medium text-gray-700 mb-1">
+                Guardian Email
+              </label>
+              <input
+                id="guardian.email"
+                name="guardian.email"
+                type="email"
+                value={formData.guardian.email}
+                onChange={handleChange}
+                placeholder="Enter guardian's email"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Used for outpass approval and payment reminders
+              </p>
             </div>
           </div>
         </Card>

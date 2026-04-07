@@ -46,11 +46,12 @@ const RoomLayout = () => {
   const [studentSearch, setStudentSearch] = useState('');
 
   const [configForm, setConfigForm] = useState({
-    hostel_name: '',
-    hostel_block: '',
-    total_floors: 1,
-    rooms_per_floor: 1,
-    default_capacity: 3,
+        hostel_name: '',
+        hostel_block: '',
+        block_gender: '',
+        total_floors: 1,
+        rooms_per_floor: 1,
+        default_capacity: 3,
   });
 
   const loadConfigs = async () => {
@@ -98,11 +99,12 @@ const RoomLayout = () => {
 
       if (selectedConfig) {
         setConfigForm({
-          hostel_name: selectedConfig.hostel_name,
-          hostel_block: selectedConfig.hostel_block,
-          total_floors: selectedConfig.total_floors,
-          rooms_per_floor: selectedConfig.rooms_per_floor,
-          default_capacity: selectedConfig.default_capacity,
+            hostel_name: selectedConfig.hostel_name,
+            hostel_block: selectedConfig.hostel_block,
+            block_gender: selectedConfig.block_gender || '',
+            total_floors: selectedConfig.total_floors,
+            rooms_per_floor: selectedConfig.rooms_per_floor,
+            default_capacity: selectedConfig.default_capacity,
         });
       }
 
@@ -123,10 +125,14 @@ const RoomLayout = () => {
   };
 
   const handleSaveConfig = async () => {
-    if (!configForm.hostel_name.trim() || !configForm.hostel_block.trim()) {
-      toast.error('Hostel name and block are required');
-      return;
-    }
+    if (
+        !configForm.hostel_name.trim() ||
+        !configForm.hostel_block.trim() ||
+        !configForm.block_gender
+    ) {
+        toast.error('Hostel name, block, and block gender are required');
+        return;
+}
 
     try {
       setSavingConfig(true);
@@ -276,11 +282,12 @@ const RoomLayout = () => {
     setSelectedBlock('');
     setLayoutData(null);
     setConfigForm({
-      hostel_name: '',
-      hostel_block: '',
-      total_floors: 1,
-      rooms_per_floor: 1,
-      default_capacity: 3,
+        hostel_name: '',
+        hostel_block: '',
+        block_gender: '',
+        total_floors: 1,
+        rooms_per_floor: 1,
+        default_capacity: 3,
     });
   };
 
@@ -310,7 +317,7 @@ const RoomLayout = () => {
             >
               {configs.map((config) => (
                 <option key={config._id} value={config.hostel_block}>
-                  Block {config.hostel_block}
+                    Block {config.hostel_block} • {config.block_gender === 'male' ? 'Male' : 'Female'}
                 </option>
               ))}
             </select>
@@ -339,7 +346,7 @@ const RoomLayout = () => {
           Hostel Block Configuration
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Hostel Name
@@ -368,7 +375,21 @@ const RoomLayout = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
             />
           </div>
-
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Block Gender
+            </label>
+            <select
+                name="block_gender"
+                value={configForm.block_gender}
+                onChange={handleConfigChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+                <option value="">Select gender type</option>
+                <option value="male">Male Block</option>
+                <option value="female">Female Block</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Floors
