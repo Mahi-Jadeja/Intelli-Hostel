@@ -28,6 +28,7 @@ import NotFound from './pages/errors/NotFound';
 import StudentComplaints from './pages/student/Complaints';
 import StudentOutpass from './pages/student/Outpass';
 import StudentPayments from './pages/student/Payments';
+import AdminRoomLayout from './pages/admin/RoomLayout';
 
 // Admin placeholder (we'll build real admin pages in later phases)
 const AdminPlaceholder = () => (
