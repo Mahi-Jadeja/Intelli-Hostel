@@ -46,14 +46,41 @@ router.post('/config', validate(hostelConfigSchema), upsertHostelConfig);
 /**
  * @swagger
  * /api/v1/hostel/config:
- *   get:
- *     summary: Get all hostel configs
+ *   post:
+ *     summary: Create or update hostel block config
  *     tags: [Hostel]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - hostel_name
+ *               - hostel_block
+ *               - block_gender
+ *               - total_floors
+ *               - rooms_per_floor
+ *             properties:
+ *               hostel_name:
+ *                 type: string
+ *               hostel_block:
+ *                 type: string
+ *                 example: A
+ *               block_gender:
+ *                 type: string
+ *                 enum: [male, female]
+ *               total_floors:
+ *                 type: integer
+ *               rooms_per_floor:
+ *                 type: integer
+ *               default_capacity:
+ *                 type: integer
  *     responses:
  *       200:
- *         description: Config list
+ *         description: Config saved successfully
  */
 router.get('/config', getHostelConfigs);
 

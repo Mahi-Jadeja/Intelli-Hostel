@@ -48,18 +48,32 @@ describe('Hostel Endpoints', () => {
         name: 'Student One',
         email: 'student1@test.com',
         password: 'Password123',
+        gender: 'male',
+        branch: 'Computer Science',
+        guardian: {
+          name: 'Parent One',
+          phone: '9876543210',
+          email: 'parent1@test.com',
+        },
       });
 
     studentToken = studentRes1.body.data.token;
     student1 = await Student.findOne({ email: 'student1@test.com' });
 
     // Create student 2
-    await request(app)
+        await request(app)
       .post('/api/v1/auth/register')
       .send({
         name: 'Student Two',
         email: 'student2@test.com',
         password: 'Password123',
+        gender: 'male',
+        branch: 'Mechanical Engineering',
+        guardian: {
+          name: 'Parent Two',
+          phone: '9876543211',
+          email: 'parent2@test.com',
+        },
       });
 
     student2 = await Student.findOne({ email: 'student2@test.com' });

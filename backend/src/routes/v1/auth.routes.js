@@ -19,12 +19,15 @@ const router = Router();
  * @swagger
  * components:
  *   schemas:
- *     RegisterInput:
+ *      *     RegisterInput:
  *       type: object
  *       required:
  *         - name
  *         - email
  *         - password
+ *         - gender
+ *         - branch
+ *         - guardian
  *       properties:
  *         name:
  *           type: string
@@ -37,6 +40,37 @@ const router = Router();
  *           type: string
  *           format: password
  *           example: Password123
+ *         gender:
+ *           type: string
+ *           enum: [male, female]
+ *           example: male
+ *         branch:
+ *           type: string
+ *           enum:
+ *             - Artificial Intelligence and Machine Learning
+ *             - Electronics and Telecommunication
+ *             - Computer Science
+ *             - Robotics and Automation
+ *             - Mechanical Engineering
+ *             - Civil Engineering
+ *           example: Computer Science
+ *         guardian:
+ *           type: object
+ *           required:
+ *             - name
+ *             - phone
+ *             - email
+ *           properties:
+ *             name:
+ *               type: string
+ *               example: Suresh Patil
+ *             phone:
+ *               type: string
+ *               example: 9876543210
+ *             email:
+ *               type: string
+ *               format: email
+ *               example: guardian@example.com
  *     LoginInput:
  *       type: object
  *       required:

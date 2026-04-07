@@ -54,11 +54,18 @@ router.get('/profile', getProfile);
  *                 type: string
  *               gender:
  *                 type: string
- *                 enum: [male, female, other]
+ *                 enum: [male, female]
  *               college_id:
  *                 type: string
  *               branch:
  *                 type: string
+ *                 enum:
+ *                   - Artificial Intelligence and Machine Learning
+ *                   - Electronics and Telecommunication
+ *                   - Computer Science
+ *                   - Robotics and Automation
+ *                   - Mechanical Engineering
+ *                   - Civil Engineering
  *               year:
  *                 type: number
  *               semester:
@@ -70,6 +77,9 @@ router.get('/profile', getProfile);
  *                     type: string
  *                   phone:
  *                     type: string
+ *                   email:
+ *                     type: string
+ *                     format: email
  *     responses:
  *       200:
  *         description: Profile updated
