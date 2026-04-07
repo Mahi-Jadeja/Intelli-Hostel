@@ -126,6 +126,7 @@ function App() {
             >
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminPlaceholder />} />
+              <Route path="rooms" element={<AdminRoomLayout />} />
               {/* More admin routes will be added in later phases */}
             </Route>
 
