@@ -26,6 +26,7 @@ import StudentRoom from './pages/student/Room';
 import NotFound from './pages/errors/NotFound';
 
 import StudentComplaints from './pages/student/Complaints';
+import StudentOutpass from './pages/student/Outpass';
 
 // Admin placeholder (we'll build real admin pages in later phases)
 const AdminPlaceholder = () => (
@@ -103,6 +104,7 @@ function App() {
               <Route path="profile" element={<StudentProfile />} />
               <Route path="room" element={<StudentRoom />} />
               <Route path="complaints" element={<StudentComplaints />} />
+              <Route path="outpass" element={<StudentOutpass />} />
               {/* These will be added in later phases: */}
               {/* <Route path="complaints" element={<StudentComplaints />} /> */}
               {/* <Route path="outpass" element={<StudentOutpass />} /> */}
