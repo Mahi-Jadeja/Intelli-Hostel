@@ -5,6 +5,7 @@ import {
   getAllPayments,
   getPaymentById,
   markPaymentPaid,
+  triggerPaymentReminders,
 } from '../../controllers/payment.controller.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import validate from '../../middleware/validate.js';
@@ -12,6 +13,11 @@ import {
   createPaymentSchema,
   markPaymentPaidSchema,
 } from '../../validations/payment.validation.js';
+import { z } from 'zod';
+
+const triggerReminderSchema = z.object({
+  payment_id: z.string().trim().optional(),
+});
 
 const router = Router();
 
@@ -128,5 +134,25 @@ router.get('/:id', getPaymentById);
  *         description: Already paid
  */
 router.patch('/:id/pay', validate(markPaymentPaidSchema), markPaymentPaid);
-
+/**
+ * @swagger
+ * /api/v1/payments/reminders:
+ *   post:
+ *     summary: Manually trigger payment reminders (admin only)
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               payment_id:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Reminders sent successfully
+ */
+router.post('/reminders', requireRole('admin'), triggerPaymentReminders);
 export default router;
