@@ -8,6 +8,8 @@ import {
   getEligibleStudents,
   allocateStudentToRoom,
   deallocateStudent,
+  previewBulkAllocation,
+  executeBulkAllocation,
 } from '../../controllers/hostel.controller.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import validate from '../../middleware/validate.js';
@@ -15,6 +17,8 @@ import {
   hostelConfigSchema,
   generateRoomsSchema,
   allocateRoomSchema,
+  previewBulkAllocationSchema,
+  executeBulkAllocationSchema,
 } from '../../validations/hostel.validation.js';
 
 const router = Router();
@@ -139,7 +143,41 @@ router.get('/layout', getRoomLayout);
  *         description: Eligible students list
  */
 router.get('/eligible-students', getEligibleStudents);
+/**
+ * @swagger
+ * /api/v1/hostel/allocate/preview:
+ *   post:
+ *     summary: Preview bulk room allocation (admin only)
+ *     tags: [Hostel]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Allocation preview generated
+ */
+router.post(
+  '/allocate/preview',
+  validate(previewBulkAllocationSchema),
+  previewBulkAllocation
+);
 
+/**
+ * @swagger
+ * /api/v1/hostel/allocate/execute:
+ *   post:
+ *     summary: Execute bulk room allocation (admin only)
+ *     tags: [Hostel]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Bulk allocation executed
+ */
+router.post(
+  '/allocate/execute',
+  validate(executeBulkAllocationSchema),
+  executeBulkAllocation
+);
 /**
  * @swagger
  * /api/v1/hostel/allocate:
