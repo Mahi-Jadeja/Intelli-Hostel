@@ -129,9 +129,6 @@ const getNextAvailableBedNo = (room) => {
 
 /**
  * Compute simulated room status.
- *
- * We do NOT trust the old DB status during preview because
- * reshuffle scopes may remove occupants from the room snapshot.
  */
 const getSimulatedRoomStatus = (room) => {
   if (room.status === 'maintenance') {
@@ -471,7 +468,6 @@ const allocateStudentsSequentially = ({
  * Extract clean mutual roommate pairs.
  *
  * Only A<->B mutual selections are honored.
- * One-sided preferences are ignored.
  */
 const extractMutualPairs = (students) => {
   const studentMap = new Map(students.map((student) => [student.student_id, student]));
@@ -494,9 +490,6 @@ const extractMutualPairs = (students) => {
     const isMutual = partner.preferred_roommate_id === student.student_id;
 
     if (!isMutual) continue;
-
-    // Same gender must already hold because roommate preference API enforces it,
-    // but we keep a defensive check here.
     if (partner.gender !== student.gender) continue;
 
     pairedIds.add(student.student_id);
@@ -517,10 +510,6 @@ const extractMutualPairs = (students) => {
 
 /**
  * Allocate mutual preference pairs first.
- *
- * Rule:
- * - pair must go into the same room
- * - room must have at least 2 free beds
  */
 const allocateMutualPairs = ({ pairs, rooms, configMap }) => {
   const allocations = [];
@@ -591,7 +580,7 @@ const groupStudents = (students, getKey) => {
 };
 
 /**
- * Allocate by group order using the given room-matching rule.
+ * Allocate grouped students in sorted group order.
  */
 const allocateGroupedStudents = ({
   groups,
@@ -646,7 +635,6 @@ const allocatePreferenceMode = ({ students, rooms, configMap, seed }) => {
 
   let fallbackPool = [...remainingStudents, ...pairResult.fallbackStudents].sort(sortStudents);
 
-  // Stage 2: same year + same branch
   const sameYearBranchGroups = groupStudents(
     fallbackPool,
     (student) => `${student.gender}|${student.year}|${student.branch}`
@@ -664,7 +652,6 @@ const allocatePreferenceMode = ({ students, rooms, configMap, seed }) => {
       occupant.branch === student.branch,
   });
 
-  // Stage 3: same year
   const sameYearGroups = groupStudents(
     sameYearBranchResult.leftovers,
     (student) => `${student.gender}|${student.year}`
@@ -680,7 +667,6 @@ const allocatePreferenceMode = ({ students, rooms, configMap, seed }) => {
       occupant.gender === student.gender && occupant.year === student.year,
   });
 
-  // Stage 4: final random within compatible gender blocks
   const randomMaleStudents = shuffleWithSeed(
     sameYearResult.leftovers.filter((student) => student.gender === 'male'),
     `${seed}-preference-final-male`
@@ -787,6 +773,93 @@ const allocateRandomMode = ({ students, rooms, configMap, seed }) => {
 };
 
 /**
+ * Branch allocation mode:
+ * 1. same year + same branch
+ * 2. same year
+ * 3. final same-gender mixing
+ *
+ * This follows your confirmed rule:
+ * - try same branch + year first
+ * - then same year
+ * - then don't leave beds unused; mix within same gender
+ */
+const allocateBranchMode = ({ students, rooms, configMap }) => {
+  const orderedStudents = [...students].sort(sortStudents);
+
+  // Stage 1: same year + same branch
+  const sameYearBranchGroups = groupStudents(
+    orderedStudents,
+    (student) => `${student.gender}|${student.year}|${student.branch}`
+  );
+
+  const sameYearBranchResult = allocateGroupedStudents({
+    groups: sameYearBranchGroups,
+    groupSorter: ([keyA], [keyB]) => keyA.localeCompare(keyB),
+    rooms,
+    configMap,
+    stage: 'same_year_same_branch',
+    occupantMatcher: (occupant, student) =>
+      occupant.gender === student.gender &&
+      occupant.year === student.year &&
+      occupant.branch === student.branch,
+  });
+
+  // Stage 2: leftover same year mixing
+  const sameYearGroups = groupStudents(
+    sameYearBranchResult.leftovers,
+    (student) => `${student.gender}|${student.year}`
+  );
+
+  const sameYearResult = allocateGroupedStudents({
+    groups: sameYearGroups,
+    groupSorter: ([keyA], [keyB]) => keyA.localeCompare(keyB),
+    rooms,
+    configMap,
+    stage: 'same_year',
+    occupantMatcher: (occupant, student) =>
+      occupant.gender === student.gender && occupant.year === student.year,
+  });
+
+  // Stage 3: final same-gender mixing so students do not remain unallocated
+  const sameGenderGroups = groupStudents(
+    sameYearResult.leftovers,
+    (student) => `${student.gender}`
+  );
+
+  const sameGenderMixedResult = allocateGroupedStudents({
+    groups: sameGenderGroups,
+    groupSorter: ([keyA], [keyB]) => keyA.localeCompare(keyB),
+    rooms,
+    configMap,
+    stage: 'same_gender_mixed',
+    occupantMatcher: (occupant, student) => occupant.gender === student.gender,
+  });
+
+  const allocations = [
+    ...sameYearBranchResult.allocations,
+    ...sameYearResult.allocations,
+    ...sameGenderMixedResult.allocations,
+  ];
+
+  const unallocatedStudents = sameGenderMixedResult.leftovers.map((student) => ({
+    student_id: student.student_id,
+    name: student.name,
+    gender: student.gender,
+    branch: student.branch,
+    reason: `No available ${student.gender} bed found in current allocation scope`,
+  }));
+
+  return {
+    allocations,
+    unallocatedStudents,
+    preferencePairsHonored: 0,
+    fallbackAllocationsCount: allocations.filter(
+      (item) => item.allocation_stage !== 'same_year_same_branch'
+    ).length,
+  };
+};
+
+/**
  * Simulate bulk allocation without touching the DB.
  */
 export const simulateBulkAllocation = async ({
@@ -795,11 +868,8 @@ export const simulateBulkAllocation = async ({
   selected_blocks = [],
   seed,
 }) => {
-  if (!['random', 'preference'].includes(mode)) {
-    throw new AppError(
-      'This allocation mode will be implemented in the next part',
-      400
-    );
+  if (!['random', 'preference', 'branch'].includes(mode)) {
+    throw new AppError('Unsupported allocation mode', 400);
   }
 
   const normalizedBlocks = normalizeSelectedBlocks(selected_blocks);
@@ -844,20 +914,29 @@ export const simulateBulkAllocation = async ({
 
   const candidateSnapshots = candidates.map(buildStudentSnapshot);
 
-  const result =
-    mode === 'preference'
-      ? allocatePreferenceMode({
-          students: candidateSnapshots,
-          rooms: preparedRooms,
-          configMap,
-          seed,
-        })
-      : allocateRandomMode({
-          students: candidateSnapshots,
-          rooms: preparedRooms,
-          configMap,
-          seed,
-        });
+  let result;
+
+  if (mode === 'preference') {
+    result = allocatePreferenceMode({
+      students: candidateSnapshots,
+      rooms: preparedRooms,
+      configMap,
+      seed,
+    });
+  } else if (mode === 'branch') {
+    result = allocateBranchMode({
+      students: candidateSnapshots,
+      rooms: preparedRooms,
+      configMap,
+    });
+  } else {
+    result = allocateRandomMode({
+      students: candidateSnapshots,
+      rooms: preparedRooms,
+      configMap,
+      seed,
+    });
+  }
 
   return {
     mode,
@@ -943,7 +1022,6 @@ export const executeBulkAllocationPlan = async ({
     ])
   );
 
-  // Update affected rooms
   const affectedRooms = await Room.find({
     _id: { $in: [...finalRoomMap.keys()] },
   });
@@ -957,7 +1035,6 @@ export const executeBulkAllocationPlan = async ({
     await room.save();
   }
 
-  // Update candidate students
   const candidateStudents = await Student.find({
     _id: { $in: candidateStudentIds },
   });
