@@ -375,4 +375,126 @@ describe('Hostel Endpoints', () => {
       expect(ids).not.toContain(student1._id.toString());
     });
   });
+
+  describe('POST /api/v1/hostel/allocate/preview and /execute', () => {
+    beforeEach(async () => {
+      // Update student2 to female for gender-separation test
+      student2.gender = 'female';
+      student2.branch = 'Civil Engineering';
+      await student2.save();
+
+      await HostelConfig.create([
+        {
+          hostel_name: 'Boys Hostel',
+          hostel_block: 'A',
+          block_gender: 'male',
+          total_floors: 1,
+          rooms_per_floor: 2,
+          default_capacity: 2,
+        },
+        {
+          hostel_name: 'Girls Hostel',
+          hostel_block: 'B',
+          block_gender: 'female',
+          total_floors: 1,
+          rooms_per_floor: 2,
+          default_capacity: 2,
+        },
+      ]);
+
+      await Room.insertMany([
+        {
+          room_no: '101',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '102',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '101',
+          hostel_block: 'B',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '102',
+          hostel_block: 'B',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+      ]);
+    });
+
+    it('should preview random bulk allocation with gender-correct blocks', async () => {
+      const res = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'random',
+          scope: 'unallocated',
+        })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.preview.seed).toBeDefined();
+      expect(res.body.data.preview.summary.totalEligibleStudents).toBeGreaterThanOrEqual(2);
+      expect(res.body.data.preview.allocations).toHaveLength(2);
+
+      const student1Allocation = res.body.data.preview.allocations.find(
+        (item) => item.student_id === student1._id.toString()
+      );
+      const student2Allocation = res.body.data.preview.allocations.find(
+        (item) => item.student_id === student2._id.toString()
+      );
+
+      expect(student1Allocation.hostel_block).toBe('A');
+      expect(student2Allocation.hostel_block).toBe('B');
+    });
+
+    it('should execute random bulk allocation and persist student room data', async () => {
+      const previewRes = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'random',
+          scope: 'unallocated',
+        })
+        .expect(200);
+
+      const seed = previewRes.body.data.preview.seed;
+
+      const executeRes = await request(app)
+        .post('/api/v1/hostel/allocate/execute')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'random',
+          scope: 'unallocated',
+          seed,
+        })
+        .expect(200);
+
+      expect(executeRes.body.success).toBe(true);
+      expect(executeRes.body.data.executed.studentsAllocated).toBe(2);
+
+      const updatedStudent1 = await Student.findById(student1._id);
+      const updatedStudent2 = await Student.findById(student2._id);
+
+      expect(updatedStudent1.hostel_block).toBe('A');
+      expect(updatedStudent1.room_no).toBeTruthy();
+      expect(updatedStudent1.bed_no).toBeTruthy();
+
+      expect(updatedStudent2.hostel_block).toBe('B');
+      expect(updatedStudent2.room_no).toBeTruthy();
+      expect(updatedStudent2.bed_no).toBeTruthy();
+    });
+  });
 });

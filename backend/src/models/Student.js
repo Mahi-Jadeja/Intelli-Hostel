@@ -155,7 +155,19 @@ const studentSchema = new mongoose.Schema(
         lowercase: true,
       },
     },
-
+    // ============================================================
+    // ROOM PREFERENCE
+    // ============================================================
+    room_preference: {
+      preferred_roommate: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Student',
+        default: null,
+        // Stores the Student _id of the preferred roommate
+        // Example:
+        // room_preference: { preferred_roommate: ObjectId("...") }
+      },
+    },
     // ============================================================
     // STATUS
     // ============================================================
@@ -187,6 +199,7 @@ studentSchema.index({ hostel_block: 1 });
 // Specific room lookup
 studentSchema.index({ hostel_block: 1, room_no: 1 });
 
+
 /**
  * Helpful for future allocation queries:
  * - filter active hostellers
@@ -201,7 +214,7 @@ studentSchema.index({
   is_active: 1,
   is_hosteller: 1,
 });
-
+studentSchema.index({ 'room_preference.preferred_roommate': 1 });
 const Student = mongoose.model('Student', studentSchema);
 
 export default Student;
