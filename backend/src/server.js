@@ -3,7 +3,7 @@ import config from './config/env.js';
 import connectDB from './config/db.js';
 import logger from './config/logger.js';
 import './utils/email.js';
-import './utils/cron.js';
+import { initScheduledTasks } from './utils/cron.js';
 
 // Variable to hold the server reference
 // We need this for graceful shutdown
@@ -30,6 +30,9 @@ const startServer = async () => {
       logger.info(`📚 API Docs: http://localhost:${config.port}/api-docs`);
       logger.info(`❤️  Health:   http://localhost:${config.port}/api/health`);
     });
+
+    // Step 3: Initialize scheduled tasks
+    initScheduledTasks();
   } catch (error) {
     logger.error(`Failed to start server: ${error.message}`);
     process.exit(1);
