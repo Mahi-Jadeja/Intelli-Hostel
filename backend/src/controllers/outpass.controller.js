@@ -1,43 +1,99 @@
 import Outpass from '../models/Outpass.js';
 import Student from '../models/Student.js';
+import { sendEmail } from '../utils/email.js';
+import config from '../config/env.js';
 import AppError from '../utils/AppError.js';
 import { sendSuccess } from '../utils/response.js';
 import paginate from '../utils/pagination.js';
-
 /**
  * Create a new outpass request
  *
  * POST /api/v1/outpass
  *
- * Student creates an outpass.
- * Status is always 'pending' initially.
+ * Flow:
+ * 1. Find student profile
+ * 2. Validate guardian email exists
+ * 3. Create outpass with token + expiry
+ * 4. Send approval email to guardian
+ * 5. Return success (even if email fails, outpass is saved)
  */
 export const createOutpass = async (req, res, next) => {
   try {
     const { from_date, to_date, reason } = req.body;
 
-    // Find the authenticated student's profile
     const student = await Student.findOne({ user_id: req.user.id });
 
     if (!student) {
       return next(new AppError('Student profile not found', 404));
     }
 
-    // Create outpass request
+    const guardianEmail = student.guardian?.email;
+
+    if (!guardianEmail) {
+      return next(
+        new AppError(
+          'Guardian email is missing in your profile. Please update it before requesting an outpass.',
+          400
+        )
+      );
+    }
+
+    // Calculate expiry: 00:00:00 on the from_date
+    const fromDate = new Date(from_date);
+    const tokenExpiry = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0, 0);
+
     const outpass = await Outpass.create({
       student_id: student._id,
       from_date,
       to_date,
       reason,
+      guardian_email: guardianEmail,
       status: 'pending',
+      token_expires_at: tokenExpiry,
     });
+
+    // Attempt to send guardian email
+    try {
+      const approvalUrl = `${config.clientUrl}/outpass/guardian-action/${outpass.approval_token}`;
+
+      await sendEmail({
+        to: guardianEmail,
+        subject: `Outpass Approval Request for ${student.name}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Outpass Approval Required</h2>
+            <p>Dear Guardian,</p>
+            <p><strong>${student.name}</strong> has requested an outpass with the following details:</p>
+            <ul>
+              <li><strong>From:</strong> ${new Date(from_date).toLocaleDateString()}</li>
+              <li><strong>To:</strong> ${new Date(to_date).toLocaleDateString()}</li>
+              <li><strong>Reason:</strong> ${reason}</li>
+            </ul>
+            <p style="margin: 20px 0;">
+              <a href="${approvalUrl}" 
+                 style="background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                 Approve or Reject Request
+              </a>
+            </p>
+            <p style="color: #666; font-size: 12px;">
+              This link will expire on ${tokenExpiry.toLocaleDateString()}.
+            </p>
+          </div>
+        `,
+        text: `Dear Guardian, ${student.name} requested an outpass from ${new Date(from_date).toLocaleDateString()} to ${new Date(to_date).toLocaleDateString()}. Reason: ${reason}. Approve or reject here: ${approvalUrl}`,
+      });
+    } catch (emailError) {
+      // We intentionally DO NOT fail the outpass creation if email fails.
+      // The outpass is still saved as 'pending'.
+      // Admin can retry later via cron or manual resend.
+      console.error('❌ Guardian email failed for outpass:', outpass._id, emailError.message);
+    }
 
     sendSuccess(res, 201, 'Outpass request submitted successfully', { outpass });
   } catch (error) {
     next(error);
   }
 };
-
 /**
  * Get current student's outpass history
  *

@@ -30,10 +30,16 @@ export const createOutpassSchema = z
     (data) => {
       const from = new Date(data.from_date);
       const to = new Date(data.to_date);
-      return from < to;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // from_date cannot be before today
+      if (from < today) return false;
+      // to_date must be strictly after from_date
+      return to > from;
     },
     {
-      message: 'Return date must be after leave date',
+      message: 'From date cannot be in the past, and return date must be after leave date',
       path: ['to_date'],
     }
   );
