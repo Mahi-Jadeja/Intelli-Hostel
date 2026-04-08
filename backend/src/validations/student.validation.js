@@ -93,3 +93,19 @@ export const updateProfileSchema = z.object({
     })
     .optional(),
 });
+/**
+ * Update room preference schema
+ *
+ * preferred_roommate_id:
+ * - string student ID → set preference
+ * - null              → clear preference
+ */
+export const updateRoomPreferenceSchema = z.object({
+  preferred_roommate_id: z.union([
+    z
+      .string()
+      .trim()
+      .min(1, 'Preferred roommate ID is required'),
+    z.null(),
+  ]),
+});
