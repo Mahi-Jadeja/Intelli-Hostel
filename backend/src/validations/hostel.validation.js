@@ -70,3 +70,79 @@ export const allocateRoomSchema = z.object({
     .trim()
     .min(1, 'Room ID is required'),
 });
+
+/**
+ * Bulk allocation scopes
+ *
+ * unallocated               → only students with no room allocation
+ * reshuffle_selected_blocks → reshuffle only students currently in selected blocks
+ * reshuffle_all             → reshuffle all eligible students
+ */
+const BULK_ALLOCATION_SCOPES = [
+  'unallocated',
+  'reshuffle_selected_blocks',
+  'reshuffle_all',
+];
+
+/**
+ * Preview bulk allocation
+ *
+ * NOTE:
+ * Part 1 supports only RANDOM mode.
+ * We will expand this to preference + branch in the next parts.
+ */
+export const previewBulkAllocationSchema = z
+  .object({
+    mode: z.enum(['random'], {
+      errorMap: () => ({
+        message: 'Only random mode is supported in this part',
+      }),
+    }),
+
+    scope: z.enum(BULK_ALLOCATION_SCOPES, {
+      errorMap: () => ({
+        message:
+          'Scope must be unallocated, reshuffle_selected_blocks, or reshuffle_all',
+      }),
+    }),
+
+    selected_blocks: z
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1, 'Block cannot be empty')
+          .max(1, 'Block must be a single character')
+          .transform((value) => value.toUpperCase())
+      )
+      .optional()
+      .default([]),
+  })
+  .superRefine((data, ctx) => {
+    // If admin chooses "reshuffle selected blocks",
+    // they MUST tell us which blocks to reshuffle
+    if (
+      data.scope === 'reshuffle_selected_blocks' &&
+      (!data.selected_blocks || data.selected_blocks.length === 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selected_blocks'],
+        message:
+          'Please provide at least one selected block for reshuffle_selected_blocks scope',
+      });
+    }
+  });
+
+/**
+ * Execute bulk allocation
+ *
+ * Same as preview, but requires the seed returned by preview
+ * so random allocation remains deterministic and reproducible.
+ */
+export const executeBulkAllocationSchema = previewBulkAllocationSchema.extend({
+  seed: z
+    .string({ required_error: 'Seed is required' })
+    .trim()
+    .min(8, 'Valid preview seed is required'),
+});
