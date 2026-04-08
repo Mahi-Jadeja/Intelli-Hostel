@@ -713,4 +713,198 @@ describe('Hostel Endpoints', () => {
       expect(candidateIds).toContain(student3._id.toString());
     });
   });
+    describe('Branch mode bulk allocation', () => {
+    let student3;
+    let student4;
+
+    beforeEach(async () => {
+      // Standardize existing students
+      student1.gender = 'male';
+      student1.branch = 'Computer Science';
+      student1.year = 2;
+      await student1.save();
+
+      student2.gender = 'male';
+      student2.branch = 'Computer Science';
+      student2.year = 2;
+      await student2.save();
+
+      // Additional male student: Civil, same year
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Student Three',
+          email: 'student3@test.com',
+          password: 'Password123',
+          gender: 'male',
+          branch: 'Civil Engineering',
+          guardian: {
+            name: 'Parent Three',
+            phone: '9876543222',
+            email: 'parent3@test.com',
+          },
+        });
+
+      student3 = await Student.findOne({ email: 'student3@test.com' });
+      student3.year = 2;
+      await student3.save();
+
+      // Additional male student: Mechanical, same year
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Student Four',
+          email: 'student4@test.com',
+          password: 'Password123',
+          gender: 'male',
+          branch: 'Mechanical Engineering',
+          guardian: {
+            name: 'Parent Four',
+            phone: '9876543223',
+            email: 'parent4@test.com',
+          },
+        });
+
+      student4 = await Student.findOne({ email: 'student4@test.com' });
+      student4.year = 2;
+      await student4.save();
+
+      await HostelConfig.create([
+        {
+          hostel_name: 'Boys Hostel',
+          hostel_block: 'A',
+          block_gender: 'male',
+          total_floors: 1,
+          rooms_per_floor: 3,
+          default_capacity: 2,
+        },
+      ]);
+
+      await Room.insertMany([
+        {
+          room_no: '101',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '102',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '103',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+      ]);
+    });
+
+    it('should keep same-year same-branch students together first in branch mode', async () => {
+      const previewRes = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'branch',
+          scope: 'unallocated',
+        })
+        .expect(200);
+
+      expect(previewRes.body.success).toBe(true);
+
+      const allocations = previewRes.body.data.preview.allocations;
+
+      const allocation1 = allocations.find(
+        (item) => item.student_id === student1._id.toString()
+      );
+      const allocation2 = allocations.find(
+        (item) => item.student_id === student2._id.toString()
+      );
+
+      expect(allocation1).toBeDefined();
+      expect(allocation2).toBeDefined();
+      expect(allocation1.room_no).toBe(allocation2.room_no);
+      expect(allocation1.allocation_stage).toBe('same_year_same_branch');
+      expect(allocation2.allocation_stage).toBe('same_year_same_branch');
+    });
+
+    it('should allow same-year fallback mixing for leftover branches', async () => {
+      const previewRes = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'branch',
+          scope: 'unallocated',
+        })
+        .expect(200);
+
+      const allocations = previewRes.body.data.preview.allocations;
+
+      const allocation3 = allocations.find(
+        (item) => item.student_id === student3._id.toString()
+      );
+      const allocation4 = allocations.find(
+        (item) => item.student_id === student4._id.toString()
+      );
+
+      expect(allocation3).toBeDefined();
+      expect(allocation4).toBeDefined();
+
+      // These two different-branch students are same year,
+      // so one of them should reach same_year or same_gender_mixed stage.
+      expect(
+        ['same_year', 'same_gender_mixed', 'same_year_same_branch']
+      ).toContain(allocation3.allocation_stage);
+
+      expect(
+        ['same_year', 'same_gender_mixed', 'same_year_same_branch']
+      ).toContain(allocation4.allocation_stage);
+    });
+
+    it('should execute branch mode and persist room allocation', async () => {
+      const previewRes = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'branch',
+          scope: 'unallocated',
+        })
+        .expect(200);
+
+      const seed = previewRes.body.data.preview.seed;
+
+      const executeRes = await request(app)
+        .post('/api/v1/hostel/allocate/execute')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'branch',
+          scope: 'unallocated',
+          seed,
+        })
+        .expect(200);
+
+      expect(executeRes.body.success).toBe(true);
+      expect(executeRes.body.data.executed.studentsAllocated).toBe(4);
+
+      const updatedStudent1 = await Student.findById(student1._id);
+      const updatedStudent2 = await Student.findById(student2._id);
+      const updatedStudent3 = await Student.findById(student3._id);
+      const updatedStudent4 = await Student.findById(student4._id);
+
+      expect(updatedStudent1.hostel_block).toBe('A');
+      expect(updatedStudent2.hostel_block).toBe('A');
+      expect(updatedStudent3.hostel_block).toBe('A');
+      expect(updatedStudent4.hostel_block).toBe('A');
+
+      expect(updatedStudent1.room_no).toBeTruthy();
+      expect(updatedStudent2.room_no).toBeTruthy();
+      expect(updatedStudent3.room_no).toBeTruthy();
+      expect(updatedStudent4.room_no).toBeTruthy();
+    });
+  });
 });
