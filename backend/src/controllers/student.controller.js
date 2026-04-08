@@ -482,3 +482,161 @@ export const getDashboardStats = async (req, res, next) => {
     next(error);
   }
 };
+/**
+ * Get the layout of the student's current floor with privacy rules.
+ *
+ * GET /api/v1/student/room-layout
+ *
+ * Rules:
+ * 1. Returns all rooms on the student's assigned floor.
+ * 2. If a room is NOT the student's room:
+ *    - Return only room_no, status, capacity, occupied.
+ *    - DO NOT return student names or details.
+ * 3. If a room IS the student's room:
+ *    - Return full details including roommates.
+ */
+export const getStudentFloorLayout = async (req, res, next) => {
+  try {
+    const student = await Student.findOne({ user_id: req.user.id });
+
+    if (!student) {
+      return next(new AppError('Student profile not found', 404));
+    }
+
+    // Check if allocated
+    if (!student.hostel_block || !student.floor) {
+      return sendSuccess(res, 200, 'Student not allocated to a room', {
+        allocated: false,
+        layout: null,
+        my_room: null,
+      });
+    }
+
+    // Fetch all rooms on this specific floor
+    // We do NOT populate students yet for performance and privacy
+    const rooms = await Room.find({
+      hostel_block: student.hostel_block,
+      floor: student.floor,
+    }).sort({ room_no: 1 });
+
+    // Transform rooms to apply privacy
+    const layout = rooms.map((room) => {
+      const isMyRoom = room._id.toString() === student._id.toString() || 
+                       (room.room_no === student.room_no); 
+      // Note: Comparing IDs is safer, but room_no check is a fallback if logic changes.
+      // Actually, better to check if the room contains the student ID.
+      
+      // Let's refine the check:
+      const isMyRoomCheck = room.students.some(
+        (sId) => sId.toString() === student._id.toString()
+      );
+
+      if (isMyRoomCheck) {
+        // It's my room -> Return full details (populated later)
+        return {
+          ...room.toObject(),
+          is_my_room: true,
+        };
+      } else {
+        // Not my room -> Strip student data
+        return {
+          _id: room._id,
+          room_no: room.room_no,
+          hostel_block: room.hostel_block,
+          floor: room.floor,
+          capacity: room.capacity,
+          occupied: room.occupied,
+          status: room.status,
+          is_my_room: false,
+          // Students array is intentionally omitted
+        };
+      }
+    });
+
+    // Now populate ONLY my room to get roommate details
+    const myRoomData = rooms.find((r) =>
+      r.students.some((sId) => sId.toString() === student._id.toString())
+    );
+
+    let myRoomFull = null;
+    if (myRoomData) {
+      await myRoomData.populate(
+        'students',
+        'name email college_id branch year phone bed_no profile_pic'
+      );
+
+      // Filter out self from roommates list
+      const roommates = myRoomData.students
+        .filter((s) => s._id.toString() !== student._id.toString())
+        .map((s) => ({
+          id: s._id,
+          name: s.name,
+          branch: s.branch,
+          year: s.year,
+          bed_no: s.bed_no,
+        }));
+
+      myRoomFull = {
+        room_no: myRoomData.room_no,
+        floor: myRoomData.floor,
+        block: myRoomData.hostel_block,
+        status: myRoomData.status,
+        capacity: myRoomData.capacity,
+        occupied: myRoomData.occupied,
+        bed_no: student.bed_no,
+        roommates,
+      };
+    }
+
+    sendSuccess(res, 200, 'Floor layout retrieved', {
+      allocated: true,
+      my_room: myRoomFull,
+      floor: student.floor,
+      block: student.hostel_block,
+      layout,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Public preview of a floor layout for unallocated students.
+ *
+ * GET /api/v1/student/layout-preview?block=A&floor=1
+ *
+ * Rules:
+ * - Returns room structure only.
+ * - NO student names or personal details.
+ * - Only status (Empty/Partial/Full) and occupancy counts.
+ */
+export const getLayoutPreview = async (req, res, next) => {
+  try {
+    const { block, floor } = req.query;
+
+    if (!block || !floor) {
+      return next(new AppError('Block and Floor are required', 400));
+    }
+
+    const rooms = await Room.find({
+      hostel_block: block.toUpperCase(),
+      floor: Number(floor),
+    }).sort({ room_no: 1 });
+
+    // Strip all sensitive data
+    const safeLayout = rooms.map((room) => ({
+      room_no: room.room_no,
+      status: room.status,
+      capacity: room.capacity,
+      occupied: room.occupied,
+    }));
+
+    sendSuccess(res, 200, 'Layout preview retrieved', {
+      block: block.toUpperCase(),
+      floor: Number(floor),
+      rooms: safeLayout,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

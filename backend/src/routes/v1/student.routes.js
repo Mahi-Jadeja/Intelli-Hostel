@@ -7,6 +7,7 @@ import {
   getRoomPreference,
   searchRoommateOptions,
   updateRoomPreference,
+  getLayoutPreview,
 } from '../../controllers/student.controller.js';
 import { requireAuth } from '../../middleware/auth.js';
 import validate from '../../middleware/validate.js';
@@ -151,7 +152,42 @@ router.get('/roommate-options', searchRoommateOptions);
  *         description: Room data (null if not allocated)
  */
 router.get('/room', getRoom);
+/**
+ * @swagger
+ * /api/v1/student/room-layout:
+ *   get:
+ *     summary: Get floor layout with privacy rules (Allocated students)
+ *     tags: [Student]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Floor layout data
+ */
+router.get('/room-layout', getStudentFloorLayout);
 
+/**
+ * @swagger
+ * /api/v1/student/layout-preview:
+ *   get:
+ *     summary: View floor layout anonymously (Unallocated students)
+ *     tags: [Student]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: block
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: floor
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Safe layout preview
+ */
+router.get('/layout-preview', getLayoutPreview);
 /**
  * @swagger
  * /api/v1/student/dashboard-stats:
