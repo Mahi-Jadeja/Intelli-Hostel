@@ -8,6 +8,7 @@ import {
   searchRoommateOptions,
   updateRoomPreference,
   getLayoutPreview,
+  getStudentFloorLayout,
 } from '../../controllers/student.controller.js';
 import { requireAuth } from '../../middleware/auth.js';
 import validate from '../../middleware/validate.js';
