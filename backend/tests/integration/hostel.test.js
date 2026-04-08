@@ -497,4 +497,220 @@ describe('Hostel Endpoints', () => {
       expect(updatedStudent2.bed_no).toBeTruthy();
     });
   });
+    describe('Preference mode bulk allocation and selected-block scope S2', () => {
+    let student3;
+
+    beforeEach(async () => {
+      // Make current students standardized for this test
+      student1.gender = 'male';
+      student1.branch = 'Computer Science';
+      student1.year = 2;
+      await student1.save();
+
+      student2.gender = 'male';
+      student2.branch = 'Computer Science';
+      student2.year = 2;
+      await student2.save();
+
+      // Additional male unallocated student
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          name: 'Student Three',
+          email: 'student3@test.com',
+          password: 'Password123',
+          gender: 'male',
+          branch: 'Mechanical Engineering',
+          guardian: {
+            name: 'Parent Three',
+            phone: '9876543222',
+            email: 'parent3@test.com',
+          },
+        });
+
+      student3 = await Student.findOne({ email: 'student3@test.com' });
+
+      // Male block A and female block B
+      await HostelConfig.create([
+        {
+          hostel_name: 'Boys Hostel',
+          hostel_block: 'A',
+          block_gender: 'male',
+          total_floors: 1,
+          rooms_per_floor: 3,
+          default_capacity: 2,
+        },
+        {
+          hostel_name: 'Girls Hostel',
+          hostel_block: 'B',
+          block_gender: 'female',
+          total_floors: 1,
+          rooms_per_floor: 2,
+          default_capacity: 2,
+        },
+      ]);
+
+      await Room.insertMany([
+        {
+          room_no: '101',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '102',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '103',
+          hostel_block: 'A',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+        {
+          room_no: '101',
+          hostel_block: 'B',
+          floor: 1,
+          capacity: 2,
+          students: [],
+        },
+      ]);
+    });
+
+    it('should honor clean mutual roommate pair in preference mode', async () => {
+      // Mutual preference: student1 <-> student2
+      student1.room_preference = {
+        preferred_roommate: student2._id,
+      };
+      await student1.save();
+
+      student2.room_preference = {
+        preferred_roommate: student1._id,
+      };
+      await student2.save();
+
+      const previewRes = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'preference',
+          scope: 'unallocated',
+        })
+        .expect(200);
+
+      expect(previewRes.body.success).toBe(true);
+      expect(previewRes.body.data.preview.summary.preferencePairsHonored).toBe(1);
+
+      const allocations = previewRes.body.data.preview.allocations;
+
+      const allocation1 = allocations.find(
+        (item) => item.student_id === student1._id.toString()
+      );
+      const allocation2 = allocations.find(
+        (item) => item.student_id === student2._id.toString()
+      );
+
+      expect(allocation1).toBeDefined();
+      expect(allocation2).toBeDefined();
+
+      expect(allocation1.hostel_block).toBe('A');
+      expect(allocation2.hostel_block).toBe('A');
+      expect(allocation1.room_no).toBe(allocation2.room_no);
+      expect(allocation1.allocation_stage).toBe('preferred_pair');
+      expect(allocation2.allocation_stage).toBe('preferred_pair');
+    });
+
+    it('should execute preference mode and persist mutual pair in same room', async () => {
+      student1.room_preference = {
+        preferred_roommate: student2._id,
+      };
+      await student1.save();
+
+      student2.room_preference = {
+        preferred_roommate: student1._id,
+      };
+      await student2.save();
+
+      const previewRes = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'preference',
+          scope: 'unallocated',
+        })
+        .expect(200);
+
+      const seed = previewRes.body.data.preview.seed;
+
+      const executeRes = await request(app)
+        .post('/api/v1/hostel/allocate/execute')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'preference',
+          scope: 'unallocated',
+          seed,
+        })
+        .expect(200);
+
+      expect(executeRes.body.success).toBe(true);
+
+      const updatedStudent1 = await Student.findById(student1._id);
+      const updatedStudent2 = await Student.findById(student2._id);
+
+      expect(updatedStudent1.hostel_block).toBe('A');
+      expect(updatedStudent2.hostel_block).toBe('A');
+      expect(updatedStudent1.room_no).toBe(updatedStudent2.room_no);
+      expect(updatedStudent1.bed_no).not.toBe(updatedStudent2.bed_no);
+    });
+
+    it('should include matching unallocated students in selected-block reshuffle scope S2', async () => {
+      // Allocate student1 into selected male block A
+      const roomA101 = await Room.findOne({
+        hostel_block: 'A',
+        room_no: '101',
+      });
+
+      roomA101.students = [student1._id];
+      await roomA101.save();
+
+      student1.room_no = '101';
+      student1.hostel_block = 'A';
+      student1.floor = 1;
+      student1.bed_no = 1;
+      await student1.save();
+
+      // student2 stays unallocated male
+      student2.gender = 'male';
+      student2.branch = 'Mechanical Engineering';
+      await student2.save();
+
+      const previewRes = await request(app)
+        .post('/api/v1/hostel/allocate/preview')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          mode: 'random',
+          scope: 'reshuffle_selected_blocks',
+          selected_blocks: ['A'],
+        })
+        .expect(200);
+
+      expect(previewRes.body.success).toBe(true);
+
+      const candidateIds = previewRes.body.data.preview.meta.candidate_student_ids;
+
+      // student1 is already in selected block A
+      expect(candidateIds).toContain(student1._id.toString());
+
+      // student2 is unallocated male and block A is male → included under S2
+      expect(candidateIds).toContain(student2._id.toString());
+
+      // student3 is also male unallocated, so also included
+      expect(candidateIds).toContain(student3._id.toString());
+    });
+  });
 });
