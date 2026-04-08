@@ -18,6 +18,7 @@ const studentNavItems = [
   { to: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/student/profile', label: 'Profile', icon: User },
   { to: '/student/room', label: 'Room', icon: BedDouble },
+  { to: '/student/room-preference', label: 'Room Preference', icon: Users },
   { to: '/student/complaints', label: 'Complaints', icon: ClipboardList },
   { to: '/student/outpass', label: 'Outpass', icon: FileText },
   { to: '/student/payments', label: 'Payments', icon: CreditCard },

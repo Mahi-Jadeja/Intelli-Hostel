@@ -21,6 +21,7 @@ import OAuthCallback from './pages/public/OAuthCallback';
 import StudentOverview from './pages/student/Overview';
 import StudentProfile from './pages/student/Profile';
 import StudentRoom from './pages/student/Room';
+import StudentRoomPreference from './pages/student/RoomPreference';
 
 // Error pages
 import NotFound from './pages/errors/NotFound';
@@ -108,6 +109,7 @@ function App() {
               <Route path="complaints" element={<StudentComplaints />} />
               <Route path="outpass" element={<StudentOutpass />} />
               <Route path="payments" element={<StudentPayments />} />
+              <Route path="room-preference" element={<StudentRoomPreference />} />
               {/* These will be added in later phases: */}
               {/* <Route path="complaints" element={<StudentComplaints />} /> */}
               {/* <Route path="outpass" element={<StudentOutpass />} /> */}
