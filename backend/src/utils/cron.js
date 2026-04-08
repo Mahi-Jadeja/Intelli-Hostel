@@ -4,6 +4,7 @@ import Student from '../models/Student.js';
 import { sendEmail } from './email.js';
 import config from '../config/env.js';
 import logger from '../config/logger.js';
+import { processPaymentReminders } from './paymentReminder.js';
 
 /**
  * Auto-expire pending outpasses where from_date has passed
@@ -91,6 +92,8 @@ export const initScheduledTasks = () => {
 
     await expireOutpasses();
     await retryFailedOutpassEmails();
+    // 2. Payment Reminders
+    await processPaymentReminders();
 
     logger.info('✅ Cron: Daily tasks completed.');
   });
