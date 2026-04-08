@@ -92,7 +92,226 @@ export const updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+/**
+ * Get current student's room preference
+ *
+ * GET /api/v1/student/room-preference
+ */
+export const getRoomPreference = async (req, res, next) => {
+  try {
+    const student = await Student.findOne({ user_id: req.user.id }).populate(
+      'room_preference.preferred_roommate',
+      'name email college_id branch year gender room_no hostel_block'
+    );
 
+    if (!student) {
+      return next(new AppError('Student profile not found', 404));
+    }
+
+    const preferredRoommate = student.room_preference?.preferred_roommate || null;
+
+    let isMutual = false;
+
+    if (preferredRoommate?._id) {
+      const reverseStudent = await Student.findById(preferredRoommate._id).select(
+        'room_preference.preferred_roommate'
+      );
+
+      isMutual =
+        reverseStudent?.room_preference?.preferred_roommate?.toString() ===
+        student._id.toString();
+    }
+
+    sendSuccess(res, 200, 'Room preference retrieved successfully', {
+      preference: {
+        preferred_roommate: preferredRoommate,
+        is_mutual: isMutual,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Search roommate options for current student
+ *
+ * GET /api/v1/student/roommate-options?q=john
+ *
+ * Rules:
+ * - same gender only
+ * - active hostellers only
+ * - exclude self
+ */
+export const searchRoommateOptions = async (req, res, next) => {
+  try {
+    const { q = '', limit = 10 } = req.query;
+
+    const currentStudent = await Student.findOne({ user_id: req.user.id });
+
+    if (!currentStudent) {
+      return next(new AppError('Student profile not found', 404));
+    }
+
+    if (!currentStudent.gender) {
+      return next(
+        new AppError(
+          'Please complete your profile gender before selecting a preferred roommate',
+          400
+        )
+      );
+    }
+
+    const filter = {
+      _id: { $ne: currentStudent._id },
+      is_active: true,
+      is_hosteller: true,
+      gender: currentStudent.gender,
+    };
+
+    if (q.trim()) {
+      filter.$or = [
+        { name: { $regex: q.trim(), $options: 'i' } },
+        { email: { $regex: q.trim(), $options: 'i' } },
+        { college_id: { $regex: q.trim(), $options: 'i' } },
+        { branch: { $regex: q.trim(), $options: 'i' } },
+      ];
+    }
+
+    const students = await Student.find(filter)
+      .sort({ name: 1 })
+      .limit(Number(limit))
+      .select(
+        'name email college_id branch year gender room_no hostel_block room_preference.preferred_roommate'
+      );
+
+    const options = students.map((student) => ({
+      _id: student._id,
+      name: student.name,
+      email: student.email,
+      college_id: student.college_id,
+      branch: student.branch,
+      year: student.year,
+      gender: student.gender,
+      room_no: student.room_no,
+      hostel_block: student.hostel_block,
+      is_allocated: Boolean(student.room_no && student.hostel_block),
+      has_selected_you:
+        student.room_preference?.preferred_roommate?.toString() ===
+        currentStudent._id.toString(),
+    }));
+
+    sendSuccess(res, 200, 'Roommate options retrieved successfully', {
+      options,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Set or clear preferred roommate
+ *
+ * PUT /api/v1/student/room-preference
+ */
+export const updateRoomPreference = async (req, res, next) => {
+  try {
+    const { preferred_roommate_id } = req.body;
+
+    const student = await Student.findOne({ user_id: req.user.id });
+
+    if (!student) {
+      return next(new AppError('Student profile not found', 404));
+    }
+
+    if (!student.gender) {
+      return next(
+        new AppError(
+          'Please complete your profile gender before selecting a preferred roommate',
+          400
+        )
+      );
+    }
+
+    // Clear preference
+    if (preferred_roommate_id === null) {
+      student.room_preference = {
+        preferred_roommate: null,
+      };
+
+      await student.save();
+
+      return sendSuccess(res, 200, 'Room preference cleared successfully', {
+        preference: {
+          preferred_roommate: null,
+          is_mutual: false,
+        },
+      });
+    }
+
+    // Prevent choosing self
+    if (preferred_roommate_id === student._id.toString()) {
+      return next(new AppError('You cannot select yourself as a roommate', 400));
+    }
+
+    const preferredRoommate = await Student.findById(preferred_roommate_id).select(
+      'name email college_id branch year gender room_no hostel_block is_active is_hosteller room_preference.preferred_roommate'
+    );
+
+    if (!preferredRoommate) {
+      return next(new AppError('Preferred roommate student not found', 404));
+    }
+
+    if (!preferredRoommate.is_active || !preferredRoommate.is_hosteller) {
+      return next(
+        new AppError(
+          'You can only select an active hosteller student as preferred roommate',
+          400
+        )
+      );
+    }
+
+    // Since hostel blocks are gender-separated,
+    // preferred roommates must be same gender
+    if (preferredRoommate.gender !== student.gender) {
+      return next(
+        new AppError(
+          'Preferred roommate must have the same gender for hostel allocation',
+          400
+        )
+      );
+    }
+
+    student.room_preference = {
+      preferred_roommate: preferredRoommate._id,
+    };
+
+    await student.save();
+
+    const isMutual =
+      preferredRoommate.room_preference?.preferred_roommate?.toString() ===
+      student._id.toString();
+
+    sendSuccess(res, 200, 'Room preference updated successfully', {
+      preference: {
+        preferred_roommate: {
+          _id: preferredRoommate._id,
+          name: preferredRoommate.name,
+          email: preferredRoommate.email,
+          college_id: preferredRoommate.college_id,
+          branch: preferredRoommate.branch,
+          year: preferredRoommate.year,
+          gender: preferredRoommate.gender,
+          room_no: preferredRoommate.room_no,
+          hostel_block: preferredRoommate.hostel_block,
+        },
+        is_mutual: isMutual,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 /**
  * Get room allocation info
  *
