@@ -4,10 +4,16 @@ import {
   updateProfile,
   getRoom,
   getDashboardStats,
+  getRoomPreference,
+  searchRoommateOptions,
+  updateRoomPreference,
 } from '../../controllers/student.controller.js';
 import { requireAuth } from '../../middleware/auth.js';
 import validate from '../../middleware/validate.js';
-import { updateProfileSchema } from '../../validations/student.validation.js';
+import {
+  updateProfileSchema,
+  updateRoomPreferenceSchema,
+} from '../../validations/student.validation.js';
 
 const router = Router();
 
@@ -87,7 +93,51 @@ router.get('/profile', getProfile);
  *         description: Validation error
  */
 router.put('/profile', validate(updateProfileSchema), updateProfile);
+/**
+ * @swagger
+ * /api/v1/student/room-preference:
+ *   get:
+ *     summary: Get current student's preferred roommate
+ *     tags: [Student]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current room preference
+ */
+router.get('/room-preference', getRoomPreference);
 
+/**
+ * @swagger
+ * /api/v1/student/room-preference:
+ *   put:
+ *     summary: Set or clear preferred roommate
+ *     tags: [Student]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Room preference updated
+ */
+router.put(
+  '/room-preference',
+  validate(updateRoomPreferenceSchema),
+  updateRoomPreference
+);
+
+/**
+ * @swagger
+ * /api/v1/student/roommate-options:
+ *   get:
+ *     summary: Search roommate options for current student
+ *     tags: [Student]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Roommate search results
+ */
+router.get('/roommate-options', searchRoommateOptions);
 /**
  * @swagger
  * /api/v1/student/room:
