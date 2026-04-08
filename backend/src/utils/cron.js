@@ -92,7 +92,7 @@ export const initScheduledTasks = () => {
 
     await expireOutpasses();
     await retryFailedOutpassEmails();
-    // 2. Payment Reminders
+    // Payment Reminders
     await processPaymentReminders();
 
     logger.info('✅ Cron: Daily tasks completed.');

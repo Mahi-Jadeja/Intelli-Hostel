@@ -4,7 +4,8 @@ import AppError from '../utils/AppError.js';
 import { sendSuccess } from '../utils/response.js';
 import paginate from '../utils/pagination.js';
 import getPaymentReminders from '../utils/paymentReminder.js';
-
+import { processPaymentReminders } from '../utils/paymentReminder.js';
+import { sendPaymentReminder } from '../utils/email.js';
 /**
  * Create a payment record (admin only)
  *
@@ -196,6 +197,46 @@ export const markPaymentPaid = async (req, res, next) => {
     await payment.populate('student_id', 'name email room_no hostel_block');
 
     sendSuccess(res, 200, 'Payment marked as paid successfully', { payment });
+  } catch (error) {
+    next(error);
+  }
+};
+/**
+ * Manually trigger payment reminders
+ *
+ * POST /api/v1/payments/reminders
+ *
+ * Admin can:
+ * - Send reminders for all eligible payments (default)
+ * - Send reminder for a specific payment (pass payment_id in body)
+ */
+export const triggerPaymentReminders = async (req, res, next) => {
+  try {
+    const { payment_id } = req.body;
+    let emailsSent = 0;
+
+    if (payment_id) {
+      // Single payment reminder
+      const payment = await Payment.findById(payment_id).populate('student_id', 'name email guardian');
+
+      if (!payment || payment.status !== 'pending' || !payment.due_date) {
+        return next(new AppError('Invalid or paid payment selected for reminder', 400));
+      }
+
+      await sendPaymentReminder(payment, payment.student_id);
+
+      payment.last_reminder_sent_at = new Date();
+      payment.last_reminder_type = 'manual';
+      payment.reminder_count = (payment.reminder_count || 0) + 1;
+      await payment.save();
+
+      emailsSent = 1;
+    } else {
+      // Bulk reminder
+      emailsSent = await processPaymentReminders();
+    }
+
+    sendSuccess(res, 200, `Reminders processed successfully. ${emailsSent} email(s) sent.`, { emailsSent });
   } catch (error) {
     next(error);
   }
