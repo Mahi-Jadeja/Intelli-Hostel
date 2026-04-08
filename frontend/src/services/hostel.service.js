@@ -42,7 +42,19 @@ const hostelService = {
   getEligibleStudents: (params = {}) => {
     return api.get('/hostel/eligible-students', { params });
   },
+  /**
+   * Preview bulk room allocation
+   */
+  previewBulkAllocation: (data) => {
+    return api.post('/hostel/allocate/preview', data);
+  },
 
+  /**
+   * Execute bulk room allocation
+   */
+  executeBulkAllocation: (data) => {
+    return api.post('/hostel/allocate/execute', data);
+  },
   /**
    * Allocate student to room
    */
