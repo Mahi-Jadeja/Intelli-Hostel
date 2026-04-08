@@ -98,6 +98,7 @@ describe('Hostel Endpoints', () => {
           total_floors: 2,
           rooms_per_floor: 3,
           default_capacity: 2,
+          block_gender: 'male',
         })
         .expect(200);
 
@@ -116,6 +117,7 @@ describe('Hostel Endpoints', () => {
           total_floors: 2,
           rooms_per_floor: 3,
           default_capacity: 2,
+          block_gender: 'male',
         })
         .expect(403);
     });
@@ -129,6 +131,7 @@ describe('Hostel Endpoints', () => {
         total_floors: 2,
         rooms_per_floor: 3,
         default_capacity: 2,
+        block_gender: 'male',
       });
     });
 
@@ -183,6 +186,7 @@ describe('Hostel Endpoints', () => {
         total_floors: 2,
         rooms_per_floor: 2,
         default_capacity: 2,
+        block_gender: 'male',
       });
 
       await Room.insertMany([

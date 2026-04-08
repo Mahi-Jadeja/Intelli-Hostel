@@ -19,7 +19,7 @@ const router = Router();
  * @swagger
  * components:
  *   schemas:
- *      *     RegisterInput:
+ *     RegisterInput:
  *       type: object
  *       required:
  *         - name

@@ -27,9 +27,16 @@ describe('Complaint Endpoints', () => {
     const studentRes = await request(app)
       .post('/api/v1/auth/register')
       .send({
-        name: 'Test Student',
+        name: 'Student User',
         email: 'student@test.com',
         password: 'Password123',
+        gender: 'male',
+        branch: 'Computer Science',
+        guardian: {
+          name: 'Student Parent',
+          phone: '9876543210',
+          email: 'parent@student.com',
+        },
       });
     studentToken = studentRes.body.data.token;
     studentProfile = await Student.findOne({ email: 'student@test.com' });

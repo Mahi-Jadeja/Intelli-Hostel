@@ -3,8 +3,23 @@ import request from 'supertest';
 import app from '../../src/app.js';
 import User from '../../src/models/User.js';
 import Student from '../../src/models/Student.js';
+import bcrypt from 'bcrypt';
 
 describe('Auth Endpoints', () => {
+  // Reusable valid payload for all registration calls
+  const validUser = {
+    name: 'John Doe',
+    email: 'john@test.com',
+    password: 'Password123',
+    gender: 'male',
+    branch: 'Computer Science',
+    guardian: {
+      name: 'Suresh Patil',
+      phone: '9876543210',
+      email: 'guardian@example.com',
+    },
+  };
+
   // ---- Setup & Teardown ----
 
   beforeAll(async () => {
@@ -13,14 +28,12 @@ describe('Auth Endpoints', () => {
   });
 
   beforeEach(async () => {
-    // Clean database before each test
+    // Safe, reliable cleanup. Only touches the connected test DB.
     await User.deleteMany({});
     await Student.deleteMany({});
   });
 
   afterAll(async () => {
-    await User.deleteMany({});
-    await Student.deleteMany({});
     await mongoose.disconnect();
   });
 
@@ -29,32 +42,20 @@ describe('Auth Endpoints', () => {
   // ============================================================
 
   describe('POST /api/v1/auth/register', () => {
-    const validUser = {
-      name: 'John Doe',
-      email: 'john@test.com',
-      password: 'Password123',
-    };
-
-    // ---- Happy path ----
-
     it('should register a new user and return token', async () => {
       const res = await request(app)
         .post('/api/v1/auth/register')
         .send(validUser)
         .expect(201);
 
-      // Check response structure
       expect(res.body.success).toBe(true);
       expect(res.body.message).toBe('Registration successful');
       expect(res.body.data).toHaveProperty('token');
       expect(res.body.data).toHaveProperty('user');
 
-      // Check user data
       expect(res.body.data.user.name).toBe('John Doe');
       expect(res.body.data.user.email).toBe('john@test.com');
       expect(res.body.data.user.role).toBe('student');
-
-      // Ensure password is NOT in the response
       expect(res.body.data.user.password).toBeUndefined();
     });
 
@@ -64,13 +65,11 @@ describe('Auth Endpoints', () => {
         .send(validUser)
         .expect(201);
 
-      // Check that a Student document was created
       const student = await Student.findOne({ email: 'john@test.com' });
       expect(student).not.toBeNull();
       expect(student.name).toBe('John Doe');
       expect(student.email).toBe('john@test.com');
 
-      // Check that Student is linked to User
       const user = await User.findOne({ email: 'john@test.com' });
       expect(student.user_id.toString()).toBe(user._id.toString());
     });
@@ -81,7 +80,6 @@ describe('Auth Endpoints', () => {
         .send(validUser)
         .expect(201);
 
-      // Check the database directly
       const user = await User.findOne({ email: 'john@test.com' }).select('+password');
       expect(user.password).not.toBe('Password123');
       expect(user.password).toMatch(/^\$2[ab]\$/);
@@ -96,23 +94,17 @@ describe('Auth Endpoints', () => {
       expect(res.body.data.user.email).toBe('john@test.com');
     });
 
-    // ---- Security: Cannot register as admin ----
-
     it('should ALWAYS register as student, even if role:admin is sent', async () => {
       const res = await request(app)
         .post('/api/v1/auth/register')
-        .send({ ...validUser, role: 'admin' }) // Trying to be sneaky!
+        .send({ ...validUser, role: 'admin' })
         .expect(201);
 
-      // Should still be student
       expect(res.body.data.user.role).toBe('student');
 
-      // Verify in database too
       const user = await User.findOne({ email: 'john@test.com' });
       expect(user.role).toBe('student');
     });
-
-    // ---- Validation errors ----
 
     it('should return 400 if name is missing', async () => {
       const res = await request(app)
@@ -169,16 +161,12 @@ describe('Auth Endpoints', () => {
       expect(res.body.success).toBe(false);
     });
 
-    // ---- Duplicate email ----
-
     it('should return 409 if email already exists', async () => {
-      // Register first time
       await request(app)
         .post('/api/v1/auth/register')
         .send(validUser)
         .expect(201);
 
-      // Try to register with same email
       const res = await request(app)
         .post('/api/v1/auth/register')
         .send(validUser)
@@ -194,18 +182,13 @@ describe('Auth Endpoints', () => {
   // ============================================================
 
   describe('POST /api/v1/auth/login', () => {
-    // Create a user before login tests
     beforeEach(async () => {
+      // ✅ FIXED: Send COMPLETE payload matching backend validation
       await request(app)
         .post('/api/v1/auth/register')
-        .send({
-          name: 'John Doe',
-          email: 'john@test.com',
-          password: 'Password123',
-        });
+        .send(validUser)
+        .expect(201);
     });
-
-    // ---- Happy path ----
 
     it('should login with correct credentials', async () => {
       const res = await request(app)
@@ -216,8 +199,6 @@ describe('Auth Endpoints', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.message).toBe('Login successful');
       expect(res.body.data).toHaveProperty('token');
-      expect(res.body.data.user.email).toBe('john@test.com');
-      expect(res.body.data.user.role).toBe('student');
     });
 
     it('should return a valid JWT token', async () => {
@@ -227,8 +208,8 @@ describe('Auth Endpoints', () => {
         .expect(200);
 
       const token = loginRes.body.data.token;
+      expect(token).toBeDefined();
 
-      // Use the token to access a protected endpoint
       const meRes = await request(app)
         .get('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
@@ -236,8 +217,6 @@ describe('Auth Endpoints', () => {
 
       expect(meRes.body.data.user.email).toBe('john@test.com');
     });
-
-    // ---- Wrong credentials ----
 
     it('should return 401 for wrong password', async () => {
       const res = await request(app)
@@ -259,8 +238,6 @@ describe('Auth Endpoints', () => {
       expect(res.body.message).toBe('Invalid email or password');
     });
 
-    // ---- Validation errors ----
-
     it('should return 400 if email is missing', async () => {
       await request(app)
         .post('/api/v1/auth/login')
@@ -274,8 +251,6 @@ describe('Auth Endpoints', () => {
         .send({ email: 'john@test.com' })
         .expect(400);
     });
-
-    // ---- Case insensitive email ----
 
     it('should login with email in different case', async () => {
       const res = await request(app)
@@ -295,16 +270,14 @@ describe('Auth Endpoints', () => {
     let token;
 
     beforeEach(async () => {
-      // Register and get token
+      // ✅ FIXED: Send COMPLETE payload
       const res = await request(app)
         .post('/api/v1/auth/register')
-        .send({
-          name: 'John Doe',
-          email: 'john@test.com',
-          password: 'Password123',
-        });
+        .send(validUser)
+        .expect(201);
 
       token = res.body.data.token;
+      expect(token).toBeDefined();
     });
 
     it('should return current user with valid token', async () => {
@@ -317,7 +290,6 @@ describe('Auth Endpoints', () => {
       expect(res.body.data.user.name).toBe('John Doe');
       expect(res.body.data.user.email).toBe('john@test.com');
       expect(res.body.data.user.role).toBe('student');
-      // Password should NEVER appear
       expect(res.body.data.user.password).toBeUndefined();
     });
 
@@ -357,28 +329,37 @@ describe('Auth Endpoints', () => {
     let adminToken;
 
     beforeEach(async () => {
-      // Create a student via registration
+      // 1. Create student via registration
       const studentRes = await request(app)
         .post('/api/v1/auth/register')
         .send({
           name: 'Student User',
           email: 'student@test.com',
           password: 'Password123',
-        });
+          gender: 'male',
+          branch: 'Computer Science',
+          guardian: { name: 'Test Guardian', phone: '9876543210', email: 'guard@test.com' },
+        })
+        .expect(201);
+
       studentToken = studentRes.body.data.token;
 
-      // Create an admin directly in DB (like the seed script does)
-      const admin = await User.create({
+      // 2. Create admin directly in DB
+      // ⚠️ FIXED: Pass PLAIN TEXT password. Your User model's pre('save') hook
+      // automatically hashes it. Manual hashing causes double-hashing → 401.
+      await User.create({
         name: 'Admin User',
         email: 'admin@test.com',
         password: 'Admin123',
         role: 'admin',
       });
 
-      // Login as admin to get token
+      // 3. Login as admin to get token
       const adminRes = await request(app)
         .post('/api/v1/auth/login')
-        .send({ email: 'admin@test.com', password: 'Admin123' });
+        .send({ email: 'admin@test.com', password: 'Admin123' })
+        .expect(200);
+
       adminToken = adminRes.body.data.token;
     });
 

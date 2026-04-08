@@ -30,6 +30,13 @@ describe('Student Endpoints', () => {
         name: 'Test Student',
         email: 'student@test.com',
         password: 'Password123',
+        gender: 'male',
+        branch: 'Computer Science',
+        guardian: {
+          name: 'Student Parent',
+          phone: '9876543210',
+          email: 'parent@student.com',
+        },
       });
     studentToken = studentRes.body.data.token;
     studentUser = studentRes.body.data.user;
