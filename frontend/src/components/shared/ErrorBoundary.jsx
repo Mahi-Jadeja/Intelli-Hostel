@@ -1,63 +1,45 @@
 import { Component } from 'react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
-// Error Boundaries MUST be class components (as of React 18)
-// React hasn't added a hook equivalent for componentDidCatch yet
-// This is one of the few cases where you NEED a class component
-
+/**
+ * ErrorBoundary
+ *
+ * A class component is required for error boundaries in React.
+ * It catches errors during rendering, in lifecycle methods,
+ * and in constructors of the whole tree below it.
+ */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    // State tracks whether an error has occurred
-    this.state = {
-      hasError: false,
-      error: null,
-    };
+    this.state = { hasError: false, error: null };
   }
 
-  // This lifecycle method is called when a child component throws
-  // It receives the error and returns new state
   static getDerivedStateFromError(error) {
-    return {
-      hasError: true,
-      error,
-    };
+    // Update state so the next render will show the fallback UI
+    return { hasError: true, error };
   }
 
-  // This lifecycle method is called after an error is caught
-  // Use it for logging (but not for rendering fallback UI)
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught an error:', error);
-    console.error('Component stack:', errorInfo.componentStack);
+    // You can also log the error to an error reporting service
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
-      // Fallback UI when an error occurs
+      // Fallback UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center p-8 max-w-md">
-            {/* Error icon */}
-            <div className="text-6xl mb-4">⚠️</div>
-
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Something went wrong
-            </h1>
-
-            <p className="text-gray-500 mb-6">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
+            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+            <p className="text-gray-600 mb-6 text-sm">
               An unexpected error occurred. Please try refreshing the page.
             </p>
-
-            {/* Show error message in development */}
-            {import.meta.env.DEV && this.state.error && (
-              <pre className="text-left text-sm bg-red-50 text-red-700 p-4 rounded-lg mb-6 overflow-auto">
-                {this.state.error.message}
-              </pre>
-            )}
-
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
+              <RefreshCw className="w-4 h-4" />
               Refresh Page
             </button>
           </div>
