@@ -52,6 +52,21 @@ const studentService = {
   getDashboardStats: () => {
     return api.get('/student/dashboard-stats');
   },
+    /**
+   * Get floor layout (Allocated students)
+   */
+  getRoomLayout: () => {
+    return api.get('/student/room-layout');
+  },
+
+  /**
+   * Get layout preview (Unallocated/Browsing)
+   * @param {string} block
+   * @param {number} floor
+   */
+  getLayoutPreview: (block, floor) => {
+    return api.get('/student/layout-preview', { params: { block, floor } });
+  },
 };
 
 export default studentService;
