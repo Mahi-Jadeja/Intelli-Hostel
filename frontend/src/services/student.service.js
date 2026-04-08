@@ -17,7 +17,26 @@ const studentService = {
   updateProfile: (data) => {
     return api.put('/student/profile', data);
   },
+  /**
+   * Get current room preference
+   */
+  getRoomPreference: () => {
+    return api.get('/student/room-preference');
+  },
 
+  /**
+   * Search roommate options
+   */
+  searchRoommateOptions: (params = {}) => {
+    return api.get('/student/roommate-options', { params });
+  },
+
+  /**
+   * Update room preference
+   */
+  updateRoomPreference: (data) => {
+    return api.put('/student/room-preference', data);
+  },
   /**
    * Get room allocation info
    * @returns {Promise} Room data with roommates
