@@ -93,9 +93,9 @@ const BULK_ALLOCATION_SCOPES = [
  */
 export const previewBulkAllocationSchema = z
   .object({
-    mode: z.enum(['random'], {
+    mode: z.enum(['random', 'preference'], {
       errorMap: () => ({
-        message: 'Only random mode is supported in this part',
+        message: 'Mode must be either random or preference',
       }),
     }),
 
