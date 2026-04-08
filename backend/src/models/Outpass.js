@@ -49,7 +49,11 @@ const outpassSchema = new mongoose.Schema(
       // Will be set to from_date 00:00:00 in the controller
       default: null,
     },
-
+    email_sent: {
+      type: Boolean,
+      default: false,
+      // Tracks whether the initial guardian email was successfully sent
+    },
     // ---- Approval Status ----
     status: {
       type: String,

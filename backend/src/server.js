@@ -3,6 +3,7 @@ import config from './config/env.js';
 import connectDB from './config/db.js';
 import logger from './config/logger.js';
 import './utils/email.js';
+import './utils/cron.js';
 
 // Variable to hold the server reference
 // We need this for graceful shutdown
