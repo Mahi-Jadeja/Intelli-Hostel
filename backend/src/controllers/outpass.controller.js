@@ -95,6 +95,99 @@ export const createOutpass = async (req, res, next) => {
   }
 };
 /**
+ * Get outpass details for guardian approval page
+ *
+ * GET /api/v1/outpass/guardian-action/:token
+ *
+ * No authentication required.
+ * Validates token, checks expiry, returns safe public data.
+ */
+export const getGuardianOutpassDetails = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+
+    const outpass = await Outpass.findOne({ approval_token: token })
+      .populate('student_id', 'name email college_id branch year room_no hostel_block');
+
+    if (!outpass) {
+      return next(new AppError('Invalid or expired outpass link', 404));
+    }
+
+    // Check expiry
+    const now = new Date();
+    if (outpass.token_expires_at && now > outpass.token_expires_at) {
+      return next(new AppError('This approval link has expired', 400));
+    }
+
+    // Already decided
+    if (outpass.status !== 'pending') {
+      return next(new AppError(`This outpass has already been ${outpass.status}`, 400));
+    }
+
+    sendSuccess(res, 200, 'Outpass details retrieved', {
+      outpass: {
+        id: outpass._id,
+        student_name: outpass.student_id?.name || 'Unknown',
+        from_date: outpass.from_date,
+        to_date: outpass.to_date,
+        reason: outpass.reason,
+        guardian_email: outpass.guardian_email,
+        token: outpass.approval_token,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Guardian approves or rejects outpass
+ *
+ * PATCH /api/v1/outpass/guardian-action/:token/decision
+ *
+ * No authentication required.
+ * Validates token, checks expiry, updates status.
+ */
+export const decideGuardianOutpass = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { decision } = req.body; // 'approved' or 'rejected'
+
+    if (!['approved', 'rejected'].includes(decision)) {
+      return next(new AppError('Decision must be approved or rejected', 400));
+    }
+
+    const outpass = await Outpass.findOne({ approval_token: token });
+
+    if (!outpass) {
+      return next(new AppError('Invalid or expired outpass link', 404));
+    }
+
+    const now = new Date();
+    if (outpass.token_expires_at && now > outpass.token_expires_at) {
+      return next(new AppError('This approval link has expired', 400));
+    }
+
+    if (outpass.status !== 'pending') {
+      return next(new AppError(`This outpass has already been ${outpass.status}`, 400));
+    }
+
+    // Update status
+    outpass.status = decision === 'approved' ? 'approved' : 'guardian_rejected';
+    await outpass.save();
+
+    const message = decision === 'approved'
+      ? 'Outpass approved successfully'
+      : 'Outpass rejected by guardian';
+
+    sendSuccess(res, 200, message, {
+      status: outpass.status,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+/**
  * Get current student's outpass history
  *
  * GET /api/v1/outpass/mine

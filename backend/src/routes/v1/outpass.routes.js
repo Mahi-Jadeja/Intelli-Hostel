@@ -5,6 +5,8 @@ import {
   getAllOutpasses,
   getOutpassById,
   decideOutpass,
+  getGuardianOutpassDetails,
+  decideGuardianOutpass,
 } from '../../controllers/outpass.controller.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import validate from '../../middleware/validate.js';
@@ -14,9 +16,45 @@ import {
 } from '../../validations/outpass.validation.js';
 
 const router = Router();
+/**
+ * @swagger
+ * /api/v1/outpass/guardian-action/{token}:
+ *   get:
+ *     summary: Get outpass details for guardian approval (no login)
+ *     tags: [Outpass]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Outpass details for guardian review
+ */
+router.get('/guardian-action/:token', getGuardianOutpassDetails);
 
-// All outpass routes require authentication
+/**
+ * @swagger
+ * /api/v1/outpass/guardian-action/{token}/decision:
+ *   patch:
+ *     summary: Approve or reject outpass as guardian (no login)
+ *     tags: [Outpass]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Guardian decision recorded
+ */
+router.patch('/guardian-action/:token/decision', decideGuardianOutpass);
+
+// All outpass routes require authentication (except the two above)
 router.use(requireAuth);
+
 
 /**
  * @swagger
