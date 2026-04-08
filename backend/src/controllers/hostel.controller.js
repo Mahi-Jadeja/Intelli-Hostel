@@ -3,6 +3,11 @@ import Room from '../models/Room.js';
 import Student from '../models/Student.js';
 import AppError from '../utils/AppError.js';
 import { sendSuccess } from '../utils/response.js';
+import {
+  createAllocationSeed,
+  simulateBulkAllocation,
+  executeBulkAllocationPlan,
+} from '../utils/allocation.js';
 
 /**
  * Helper: find the next available bed number in a room
@@ -326,7 +331,48 @@ export const getEligibleStudents = async (req, res, next) => {
     next(error);
   }
 };
+/**
+ * Preview bulk room allocation
+ *
+ * POST /api/v1/hostel/allocate/preview
+ *
+ * This does NOT change the database.
+ * It only returns the planned result.
+ */
+export const previewBulkAllocation = async (req, res, next) => {
+  try {
+    const seed = createAllocationSeed();
 
+    const preview = await simulateBulkAllocation({
+      ...req.body,
+      seed,
+    });
+
+    sendSuccess(res, 200, 'Bulk allocation preview generated successfully', {
+      preview,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Execute bulk room allocation
+ *
+ * POST /api/v1/hostel/allocate/execute
+ *
+ * This re-runs the same deterministic preview using the provided seed
+ * and applies the result to the database.
+ */
+export const executeBulkAllocation = async (req, res, next) => {
+  try {
+    const result = await executeBulkAllocationPlan(req.body);
+
+    sendSuccess(res, 200, 'Bulk allocation executed successfully', result);
+  } catch (error) {
+    next(error);
+  }
+};
 /**
  * Allocate a student to a room
  *
