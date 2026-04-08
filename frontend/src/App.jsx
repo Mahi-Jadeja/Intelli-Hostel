@@ -31,6 +31,8 @@ import StudentOutpass from './pages/student/Outpass';
 import StudentPayments from './pages/student/Payments';
 import AdminRoomLayout from './pages/admin/RoomLayout';
 
+import GuardianAction from './pages/public/GuardianAction';
+
 // Admin placeholder (we'll build real admin pages in later phases)
 const AdminPlaceholder = () => (
   <div className="p-8">
@@ -89,6 +91,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/auth/callback" element={<OAuthCallback />} />
+            {/* ================================ */}
+            {/* PUBLIC ROUTES                    */}
+            <Route path="/outpass/guardian-action/:token" element={<GuardianAction />} />
 
             {/* ================================ */}
             {/* STUDENT ROUTES (nested)          */}
