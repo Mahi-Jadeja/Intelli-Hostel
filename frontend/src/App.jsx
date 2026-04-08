@@ -32,6 +32,7 @@ import StudentPayments from './pages/student/Payments';
 import AdminRoomLayout from './pages/admin/RoomLayout';
 
 import GuardianAction from './pages/public/GuardianAction';
+import AdminPayments from './pages/admin/Payments';
 
 // Admin placeholder (we'll build real admin pages in later phases)
 const AdminPlaceholder = () => (
@@ -135,6 +136,7 @@ function App() {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<AdminPlaceholder />} />
               <Route path="rooms" element={<AdminRoomLayout />} />
+              <Route path="payments" element={<AdminPayments />} />
               {/* More admin routes will be added in later phases */}
             </Route>
 

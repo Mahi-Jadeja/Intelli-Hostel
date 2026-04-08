@@ -31,6 +31,7 @@ const adminNavItems = [
   { to: '/admin/outpass', label: 'Outpass', icon: FileText },
   { to: '/admin/students', label: 'Students', icon: Users },
   { to: '/admin/payments', label: 'Payments', icon: CreditCard },
+  
 ];
 
 /**

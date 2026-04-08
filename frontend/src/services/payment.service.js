@@ -35,7 +35,7 @@ const paymentService = {
   markPaid: (id, data = {}) => {
     return api.patch(`/payments/${id}/pay`, data);
   },
-};
+
   /**
    * Admin: Trigger payment reminders (bulk or single)
    * @param {string|null} paymentId - Optional specific payment ID
@@ -44,4 +44,5 @@ const paymentService = {
     const payload = paymentId ? { payment_id: paymentId } : {};
     return api.post('/payments/reminders', payload);
   },
+};
 export default paymentService;
