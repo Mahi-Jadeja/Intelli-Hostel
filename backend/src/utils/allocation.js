@@ -9,7 +9,7 @@ import { BRANCHES, STUDENT_GENDERS } from '../constants/enums.js';
  * Create a random seed string.
  *
  * This seed is returned by preview and must be sent back on execute.
- * That keeps "random" allocation deterministic between preview and execute.
+ * That keeps allocation deterministic between preview and execute.
  */
 export const createAllocationSeed = () => {
   return crypto.randomBytes(16).toString('hex');
@@ -17,8 +17,6 @@ export const createAllocationSeed = () => {
 
 /**
  * Convert a string into a numeric seed.
- *
- * We need a number-based seed for the pseudo-random generator below.
  */
 const stringToSeed = (value) => {
   let hash = 0;
@@ -32,8 +30,6 @@ const stringToSeed = (value) => {
 
 /**
  * Small seeded random number generator.
- *
- * Same seed = same sequence of random numbers
  */
 const mulberry32 = (seed) => {
   return function () {
@@ -46,8 +42,6 @@ const mulberry32 = (seed) => {
 
 /**
  * Shuffle array deterministically using a seed.
- *
- * This gives us "random" order that is reproducible.
  */
 const shuffleWithSeed = (items, seedValue) => {
   const result = [...items];
@@ -96,11 +90,28 @@ const sortRooms = (a, b) => {
 };
 
 /**
+ * Stable student sort used for deterministic group processing.
+ */
+const sortStudents = (a, b) => {
+  const genderOrder =
+    STUDENT_GENDERS.indexOf(a.gender) - STUDENT_GENDERS.indexOf(b.gender);
+  if (genderOrder !== 0) return genderOrder;
+
+  if ((a.year || 0) !== (b.year || 0)) {
+    return (a.year || 0) - (b.year || 0);
+  }
+
+  const branchCompare = (a.branch || '').localeCompare(b.branch || '');
+  if (branchCompare !== 0) return branchCompare;
+
+  const nameCompare = (a.name || '').localeCompare(b.name || '');
+  if (nameCompare !== 0) return nameCompare;
+
+  return a.student_id.localeCompare(b.student_id);
+};
+
+/**
  * Get the next free bed number inside a room snapshot.
- *
- * Example:
- * occupied beds = [1, 3]
- * next free bed = 2
  */
 const getNextAvailableBedNo = (room) => {
   const occupiedBeds = new Set(
@@ -117,10 +128,29 @@ const getNextAvailableBedNo = (room) => {
 };
 
 /**
- * Convert real Room document into a plain simulation snapshot.
+ * Compute simulated room status.
  *
- * We never mutate the real DB in preview mode.
- * We only mutate these in-memory snapshots.
+ * We do NOT trust the old DB status during preview because
+ * reshuffle scopes may remove occupants from the room snapshot.
+ */
+const getSimulatedRoomStatus = (room) => {
+  if (room.status === 'maintenance') {
+    return 'maintenance';
+  }
+
+  if (room.occupants.length === 0) {
+    return 'empty';
+  }
+
+  if (room.occupants.length >= room.capacity) {
+    return 'full';
+  }
+
+  return 'partial';
+};
+
+/**
+ * Convert Room document into plain simulation snapshot.
  */
 const buildRoomSnapshot = (room) => ({
   room_id: room._id.toString(),
@@ -132,11 +162,14 @@ const buildRoomSnapshot = (room) => ({
   occupants: room.students.map((student) => ({
     student_id: student._id.toString(),
     bed_no: student.bed_no ?? null,
+    gender: student.gender || '',
+    branch: student.branch || '',
+    year: student.year || null,
   })),
 });
 
 /**
- * Convert Student document into a lightweight allocation object.
+ * Convert Student document into lightweight simulation object.
  */
 const buildStudentSnapshot = (student) => ({
   student_id: student._id.toString(),
@@ -147,12 +180,12 @@ const buildStudentSnapshot = (student) => ({
   year: student.year,
   current_room_no: student.room_no || '',
   current_block: student.hostel_block || '',
+  preferred_roommate_id:
+    student.room_preference?.preferred_roommate?.toString() || null,
 });
 
 /**
  * Load hostel configs for the target scope.
- *
- * If selected blocks are provided, ensure all of them exist.
  */
 const loadConfigMap = async (selectedBlocks = []) => {
   const filter =
@@ -184,16 +217,13 @@ const loadConfigMap = async (selectedBlocks = []) => {
 };
 
 /**
- * Load all rooms for the target blocks.
- *
- * We populate only bed_no because preview needs to know
- * which beds are already occupied.
+ * Load room snapshots for target blocks.
  */
 const loadRoomSnapshots = async (targetBlocks) => {
   const rooms = await Room.find({
     hostel_block: { $in: targetBlocks },
   })
-    .populate('students', 'bed_no')
+    .populate('students', 'bed_no gender branch year')
     .sort({ hostel_block: 1, floor: 1, room_no: 1 });
 
   return rooms.map(buildRoomSnapshot);
@@ -202,13 +232,18 @@ const loadRoomSnapshots = async (targetBlocks) => {
 /**
  * Get candidate students and skipped students for the chosen scope.
  *
- * Part 1 rule for reshuffle_selected_blocks:
- * - only students currently allocated in those selected blocks are candidates
- * - unallocated students are skipped in that scope
+ * Scope rules:
+ * - unallocated:
+ *     only unallocated students
  *
- * This keeps the scope safe and predictable.
+ * - reshuffle_selected_blocks (Option S2):
+ *     1. students already allocated in selected blocks
+ *     2. PLUS unallocated students whose gender matches selected block genders
+ *
+ * - reshuffle_all:
+ *     all eligible students
  */
-const getCandidateStudents = async ({ scope, selectedBlocks }) => {
+const getCandidateStudents = async ({ scope, selectedBlocks, configMap }) => {
   const students = await Student.find({
     is_active: true,
     is_hosteller: true,
@@ -216,6 +251,10 @@ const getCandidateStudents = async ({ scope, selectedBlocks }) => {
 
   const candidates = [];
   const skipped = [];
+
+  const selectedBlockGenderSet = new Set(
+    [...configMap.values()].map((config) => config.block_gender)
+  );
 
   for (const student of students) {
     const hasValidGender = STUDENT_GENDERS.includes(student.gender);
@@ -248,16 +287,22 @@ const getCandidateStudents = async ({ scope, selectedBlocks }) => {
     if (scope === 'reshuffle_selected_blocks') {
       if (allocated && selectedBlocks.includes(student.hostel_block)) {
         candidates.push(student);
-      } else {
-        skipped.push({
-          student_id: student._id.toString(),
-          name: student.name,
-          reason:
-            allocated
-              ? 'Allocated outside selected blocks'
-              : 'Unallocated students are not included in selected-block reshuffle',
-        });
+        continue;
       }
+
+      if (!allocated && selectedBlockGenderSet.has(student.gender)) {
+        candidates.push(student);
+        continue;
+      }
+
+      skipped.push({
+        student_id: student._id.toString(),
+        name: student.name,
+        reason: allocated
+          ? 'Allocated outside selected blocks'
+          : 'Unallocated student gender does not match selected block genders',
+      });
+
       continue;
     }
 
@@ -269,10 +314,9 @@ const getCandidateStudents = async ({ scope, selectedBlocks }) => {
 };
 
 /**
- * For reshuffle scopes, we remove candidate students from the room snapshots
- * so the simulation starts from a "cleared" version of the affected rooms.
+ * Remove candidate students from room snapshots for reshuffle scopes.
  *
- * For unallocated scope, rooms stay as-is.
+ * For unallocated scope, existing room occupants stay in place.
  */
 const prepareRoomsForScope = ({ rooms, candidates, scope }) => {
   if (scope === 'unallocated') {
@@ -295,84 +339,455 @@ const prepareRoomsForScope = ({ rooms, candidates, scope }) => {
 };
 
 /**
- * Allocate students into compatible rooms for RANDOM mode.
- *
- * Rules:
- * - student gender must match block gender
- * - room must not be maintenance
- * - room must have free capacity
- * - lower floor / lower room ordering is respected
- * - student order is shuffled by seed
+ * Get free beds count in a room snapshot.
  */
-const allocateRandomStudents = ({ students, rooms, configMap }) => {
+const getAvailableBedsCount = (room) => room.capacity - room.occupants.length;
+
+/**
+ * Check whether a room can accept a student under the given constraints.
+ */
+const canUseRoomForStudent = ({
+  room,
+  student,
+  configMap,
+  minFreeBeds = 1,
+  occupantMatcher = null,
+}) => {
+  const blockConfig = configMap.get(room.hostel_block);
+
+  if (!blockConfig) return false;
+  if (room.status === 'maintenance') return false;
+  if (blockConfig.block_gender !== student.gender) return false;
+  if (getAvailableBedsCount(room) < minFreeBeds) return false;
+
+  if (occupantMatcher && room.occupants.length > 0) {
+    const occupantsMatch = room.occupants.every((occupant) =>
+      occupantMatcher(occupant, student)
+    );
+
+    if (!occupantsMatch) return false;
+  }
+
+  return true;
+};
+
+/**
+ * Find first compatible room in sorted order.
+ */
+const findFirstCompatibleRoom = ({
+  rooms,
+  student,
+  configMap,
+  minFreeBeds = 1,
+  occupantMatcher = null,
+}) => {
+  return rooms.find((room) =>
+    canUseRoomForStudent({
+      room,
+      student,
+      configMap,
+      minFreeBeds,
+      occupantMatcher,
+    })
+  );
+};
+
+/**
+ * Assign one student into a room snapshot.
+ */
+const assignStudentToRoomSnapshot = ({ room, student, stage }) => {
+  const bedNo = getNextAvailableBedNo(room);
+
+  if (!bedNo) return null;
+
+  room.occupants.push({
+    student_id: student.student_id,
+    bed_no: bedNo,
+    gender: student.gender,
+    branch: student.branch,
+    year: student.year,
+  });
+
+  return {
+    student_id: student.student_id,
+    name: student.name,
+    gender: student.gender,
+    branch: student.branch,
+    year: student.year,
+    room_id: room.room_id,
+    room_no: room.room_no,
+    hostel_block: room.hostel_block,
+    floor: room.floor,
+    bed_no: bedNo,
+    allocation_stage: stage,
+  };
+};
+
+/**
+ * Allocate students sequentially using a stage-specific room rule.
+ */
+const allocateStudentsSequentially = ({
+  students,
+  rooms,
+  configMap,
+  stage,
+  occupantMatcher = null,
+}) => {
   const allocations = [];
   const unallocatedStudents = [];
 
   for (const student of students) {
-    const compatibleRoom = rooms.find((room) => {
-      const blockConfig = configMap.get(room.hostel_block);
-
-      return (
-        room.status !== 'maintenance' &&
-        room.occupants.length < room.capacity &&
-        blockConfig &&
-        blockConfig.block_gender === student.gender
-      );
+    const compatibleRoom = findFirstCompatibleRoom({
+      rooms,
+      student,
+      configMap,
+      minFreeBeds: 1,
+      occupantMatcher,
     });
 
     if (!compatibleRoom) {
-      unallocatedStudents.push({
-        student_id: student.student_id,
-        name: student.name,
-        gender: student.gender,
-        branch: student.branch,
-        reason: `No available ${student.gender} bed found in current allocation scope`,
-      });
+      unallocatedStudents.push(student);
       continue;
     }
 
-    const bedNo = getNextAvailableBedNo(compatibleRoom);
+    const allocation = assignStudentToRoomSnapshot({
+      room: compatibleRoom,
+      student,
+      stage,
+    });
 
-    if (!bedNo) {
-      unallocatedStudents.push({
-        student_id: student.student_id,
-        name: student.name,
-        gender: student.gender,
-        branch: student.branch,
-        reason: `No available bed number found in room ${compatibleRoom.room_no}`,
-      });
+    if (!allocation) {
+      unallocatedStudents.push(student);
       continue;
     }
 
-    compatibleRoom.occupants.push({
-      student_id: student.student_id,
-      bed_no: bedNo,
+    allocations.push(allocation);
+  }
+
+  return { allocations, unallocatedStudents };
+};
+
+/**
+ * Extract clean mutual roommate pairs.
+ *
+ * Only A<->B mutual selections are honored.
+ * One-sided preferences are ignored.
+ */
+const extractMutualPairs = (students) => {
+  const studentMap = new Map(students.map((student) => [student.student_id, student]));
+  const pairedIds = new Set();
+  const orderedStudents = [...students].sort(sortStudents);
+
+  const pairs = [];
+
+  for (const student of orderedStudents) {
+    if (pairedIds.has(student.student_id)) continue;
+
+    const partnerId = student.preferred_roommate_id;
+    if (!partnerId) continue;
+
+    const partner = studentMap.get(partnerId);
+    if (!partner) continue;
+    if (pairedIds.has(partner.student_id)) continue;
+    if (partner.student_id === student.student_id) continue;
+
+    const isMutual = partner.preferred_roommate_id === student.student_id;
+
+    if (!isMutual) continue;
+
+    // Same gender must already hold because roommate preference API enforces it,
+    // but we keep a defensive check here.
+    if (partner.gender !== student.gender) continue;
+
+    pairedIds.add(student.student_id);
+    pairedIds.add(partner.student_id);
+
+    const sortedPair = [student, partner].sort(sortStudents);
+    pairs.push(sortedPair);
+  }
+
+  const remainingStudents = orderedStudents.filter(
+    (student) => !pairedIds.has(student.student_id)
+  );
+
+  pairs.sort((pairA, pairB) => sortStudents(pairA[0], pairB[0]));
+
+  return { pairs, remainingStudents };
+};
+
+/**
+ * Allocate mutual preference pairs first.
+ *
+ * Rule:
+ * - pair must go into the same room
+ * - room must have at least 2 free beds
+ */
+const allocateMutualPairs = ({ pairs, rooms, configMap }) => {
+  const allocations = [];
+  const fallbackStudents = [];
+  let honoredPairsCount = 0;
+
+  for (const pair of pairs) {
+    const firstStudent = pair[0];
+    const secondStudent = pair[1];
+
+    const compatibleRoom = findFirstCompatibleRoom({
+      rooms,
+      student: firstStudent,
+      configMap,
+      minFreeBeds: 2,
     });
 
-    allocations.push({
-      student_id: student.student_id,
-      name: student.name,
-      gender: student.gender,
-      branch: student.branch,
-      year: student.year,
-      room_id: compatibleRoom.room_id,
-      room_no: compatibleRoom.room_no,
-      hostel_block: compatibleRoom.hostel_block,
-      floor: compatibleRoom.floor,
-      bed_no: bedNo,
+    if (!compatibleRoom) {
+      fallbackStudents.push(firstStudent, secondStudent);
+      continue;
+    }
+
+    const allocation1 = assignStudentToRoomSnapshot({
+      room: compatibleRoom,
+      student: firstStudent,
+      stage: 'preferred_pair',
     });
+
+    const allocation2 = assignStudentToRoomSnapshot({
+      room: compatibleRoom,
+      student: secondStudent,
+      stage: 'preferred_pair',
+    });
+
+    if (!allocation1 || !allocation2) {
+      fallbackStudents.push(firstStudent, secondStudent);
+      continue;
+    }
+
+    allocations.push(allocation1, allocation2);
+    honoredPairsCount += 1;
   }
 
   return {
     allocations,
+    fallbackStudents,
+    honoredPairsCount,
+  };
+};
+
+/**
+ * Group students by a derived key.
+ */
+const groupStudents = (students, getKey) => {
+  const groups = new Map();
+
+  for (const student of students) {
+    const key = getKey(student);
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+
+    groups.get(key).push(student);
+  }
+
+  return groups;
+};
+
+/**
+ * Allocate by group order using the given room-matching rule.
+ */
+const allocateGroupedStudents = ({
+  groups,
+  groupSorter,
+  rooms,
+  configMap,
+  stage,
+  occupantMatcher,
+}) => {
+  const allocations = [];
+  const leftovers = [];
+
+  const orderedEntries = [...groups.entries()].sort(groupSorter);
+
+  for (const [, students] of orderedEntries) {
+    const orderedStudents = [...students].sort(sortStudents);
+
+    const result = allocateStudentsSequentially({
+      students: orderedStudents,
+      rooms,
+      configMap,
+      stage,
+      occupantMatcher,
+    });
+
+    allocations.push(...result.allocations);
+    leftovers.push(...result.unallocatedStudents);
+  }
+
+  return {
+    allocations,
+    leftovers,
+  };
+};
+
+/**
+ * Preference-based allocation:
+ * 1. mutual pairs first
+ * 2. same year + same branch
+ * 3. same year
+ * 4. final random
+ */
+const allocatePreferenceMode = ({ students, rooms, configMap, seed }) => {
+  const allStudents = [...students].sort(sortStudents);
+  const { pairs, remainingStudents } = extractMutualPairs(allStudents);
+
+  const pairResult = allocateMutualPairs({
+    pairs,
+    rooms,
+    configMap,
+  });
+
+  let fallbackPool = [...remainingStudents, ...pairResult.fallbackStudents].sort(sortStudents);
+
+  // Stage 2: same year + same branch
+  const sameYearBranchGroups = groupStudents(
+    fallbackPool,
+    (student) => `${student.gender}|${student.year}|${student.branch}`
+  );
+
+  const sameYearBranchResult = allocateGroupedStudents({
+    groups: sameYearBranchGroups,
+    groupSorter: ([keyA], [keyB]) => keyA.localeCompare(keyB),
+    rooms,
+    configMap,
+    stage: 'same_year_same_branch',
+    occupantMatcher: (occupant, student) =>
+      occupant.gender === student.gender &&
+      occupant.year === student.year &&
+      occupant.branch === student.branch,
+  });
+
+  // Stage 3: same year
+  const sameYearGroups = groupStudents(
+    sameYearBranchResult.leftovers,
+    (student) => `${student.gender}|${student.year}`
+  );
+
+  const sameYearResult = allocateGroupedStudents({
+    groups: sameYearGroups,
+    groupSorter: ([keyA], [keyB]) => keyA.localeCompare(keyB),
+    rooms,
+    configMap,
+    stage: 'same_year',
+    occupantMatcher: (occupant, student) =>
+      occupant.gender === student.gender && occupant.year === student.year,
+  });
+
+  // Stage 4: final random within compatible gender blocks
+  const randomMaleStudents = shuffleWithSeed(
+    sameYearResult.leftovers.filter((student) => student.gender === 'male'),
+    `${seed}-preference-final-male`
+  );
+
+  const randomFemaleStudents = shuffleWithSeed(
+    sameYearResult.leftovers.filter((student) => student.gender === 'female'),
+    `${seed}-preference-final-female`
+  );
+
+  const finalRandomMale = allocateStudentsSequentially({
+    students: randomMaleStudents,
+    rooms,
+    configMap,
+    stage: 'final_random',
+  });
+
+  const finalRandomFemale = allocateStudentsSequentially({
+    students: randomFemaleStudents,
+    rooms,
+    configMap,
+    stage: 'final_random',
+  });
+
+  const allocations = [
+    ...pairResult.allocations,
+    ...sameYearBranchResult.allocations,
+    ...sameYearResult.allocations,
+    ...finalRandomMale.allocations,
+    ...finalRandomFemale.allocations,
+  ];
+
+  const unallocatedStudents = [
+    ...finalRandomMale.unallocatedStudents,
+    ...finalRandomFemale.unallocatedStudents,
+  ].map((student) => ({
+    student_id: student.student_id,
+    name: student.name,
+    gender: student.gender,
+    branch: student.branch,
+    reason: `No available ${student.gender} bed found in current allocation scope`,
+  }));
+
+  return {
+    allocations,
     unallocatedStudents,
+    preferencePairsHonored: pairResult.honoredPairsCount,
+    fallbackAllocationsCount: allocations.filter(
+      (item) => item.allocation_stage !== 'preferred_pair'
+    ).length,
+  };
+};
+
+/**
+ * Random allocation mode.
+ */
+const allocateRandomMode = ({ students, rooms, configMap, seed }) => {
+  const randomMaleStudents = shuffleWithSeed(
+    students.filter((student) => student.gender === 'male'),
+    `${seed}-male`
+  );
+
+  const randomFemaleStudents = shuffleWithSeed(
+    students.filter((student) => student.gender === 'female'),
+    `${seed}-female`
+  );
+
+  const maleResult = allocateStudentsSequentially({
+    students: randomMaleStudents,
+    rooms,
+    configMap,
+    stage: 'random',
+  });
+
+  const femaleResult = allocateStudentsSequentially({
+    students: randomFemaleStudents,
+    rooms,
+    configMap,
+    stage: 'random',
+  });
+
+  const allocations = [
+    ...maleResult.allocations,
+    ...femaleResult.allocations,
+  ];
+
+  const unallocatedStudents = [
+    ...maleResult.unallocatedStudents,
+    ...femaleResult.unallocatedStudents,
+  ].map((student) => ({
+    student_id: student.student_id,
+    name: student.name,
+    gender: student.gender,
+    branch: student.branch,
+    reason: `No available ${student.gender} bed found in current allocation scope`,
+  }));
+
+  return {
+    allocations,
+    unallocatedStudents,
+    preferencePairsHonored: 0,
+    fallbackAllocationsCount: 0,
   };
 };
 
 /**
  * Simulate bulk allocation without touching the DB.
- *
- * Part 1 supports RANDOM mode only.
  */
 export const simulateBulkAllocation = async ({
   mode,
@@ -380,7 +795,7 @@ export const simulateBulkAllocation = async ({
   selected_blocks = [],
   seed,
 }) => {
-  if (mode !== 'random') {
+  if (!['random', 'preference'].includes(mode)) {
     throw new AppError(
       'This allocation mode will be implemented in the next part',
       400
@@ -408,9 +823,11 @@ export const simulateBulkAllocation = async ({
   const { candidates, skipped } = await getCandidateStudents({
     scope,
     selectedBlocks: normalizedBlocks,
+    configMap,
   });
 
   const roomSnapshots = await loadRoomSnapshots(targetBlocks);
+
   const preparedRooms = prepareRoomsForScope({
     rooms: roomSnapshots,
     candidates,
@@ -425,41 +842,22 @@ export const simulateBulkAllocation = async ({
     .filter((room) => room.status !== 'maintenance')
     .reduce((sum, room) => sum + room.occupants.length, 0);
 
-  const randomMaleStudents = shuffleWithSeed(
-    candidates
-      .filter((student) => student.gender === 'male')
-      .map(buildStudentSnapshot),
-    `${seed}-male`
-  );
+  const candidateSnapshots = candidates.map(buildStudentSnapshot);
 
-  const randomFemaleStudents = shuffleWithSeed(
-    candidates
-      .filter((student) => student.gender === 'female')
-      .map(buildStudentSnapshot),
-    `${seed}-female`
-  );
-
-  const maleResult = allocateRandomStudents({
-    students: randomMaleStudents,
-    rooms: preparedRooms,
-    configMap,
-  });
-
-  const femaleResult = allocateRandomStudents({
-    students: randomFemaleStudents,
-    rooms: preparedRooms,
-    configMap,
-  });
-
-  const allocations = [
-    ...maleResult.allocations,
-    ...femaleResult.allocations,
-  ];
-
-  const unallocatedStudents = [
-    ...maleResult.unallocatedStudents,
-    ...femaleResult.unallocatedStudents,
-  ];
+  const result =
+    mode === 'preference'
+      ? allocatePreferenceMode({
+          students: candidateSnapshots,
+          rooms: preparedRooms,
+          configMap,
+          seed,
+        })
+      : allocateRandomMode({
+          students: candidateSnapshots,
+          rooms: preparedRooms,
+          configMap,
+          seed,
+        });
 
   return {
     mode,
@@ -472,9 +870,9 @@ export const simulateBulkAllocation = async ({
       totalEligibleStudents: candidates.length,
       studentsToAllocate: candidates.length,
       studentsSkipped: skipped.length,
-      studentsCouldNotBeAllocated: unallocatedStudents.length,
-      preferencePairsHonored: 0,
-      fallbackAllocationsCount: 0,
+      studentsCouldNotBeAllocated: result.unallocatedStudents.length,
+      preferencePairsHonored: result.preferencePairsHonored,
+      fallbackAllocationsCount: result.fallbackAllocationsCount,
     },
 
     room_stats: {
@@ -484,9 +882,9 @@ export const simulateBulkAllocation = async ({
       availableBedsBeforeAllocation: totalBedsInScope - occupiedBedsBefore,
     },
 
-    allocations,
+    allocations: result.allocations,
     skipped_students: skipped,
-    unallocated_students: unallocatedStudents,
+    unallocated_students: result.unallocatedStudents,
 
     final_rooms: preparedRooms.map((room) => ({
       room_id: room.room_id,
@@ -496,7 +894,7 @@ export const simulateBulkAllocation = async ({
       capacity: room.capacity,
       occupied: room.occupants.length,
       available_beds: room.capacity - room.occupants.length,
-      status: room.status,
+      status: getSimulatedRoomStatus(room),
       occupants: room.occupants,
     })),
 
@@ -545,7 +943,7 @@ export const executeBulkAllocationPlan = async ({
     ])
   );
 
-  // Step 1: Update affected rooms
+  // Update affected rooms
   const affectedRooms = await Room.find({
     _id: { $in: [...finalRoomMap.keys()] },
   });
@@ -559,7 +957,7 @@ export const executeBulkAllocationPlan = async ({
     await room.save();
   }
 
-  // Step 2: Update all candidate students
+  // Update candidate students
   const candidateStudents = await Student.find({
     _id: { $in: candidateStudentIds },
   });
@@ -573,8 +971,6 @@ export const executeBulkAllocationPlan = async ({
       student.floor = assignedRoom.floor;
       student.bed_no = assignedRoom.bed_no;
     } else {
-      // In execute we normally never reach this because we reject
-      // if unallocated_students.length > 0
       student.room_no = '';
       student.hostel_block = '';
       student.floor = null;
