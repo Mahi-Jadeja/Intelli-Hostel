@@ -28,14 +28,14 @@ describe('Student Endpoints', () => {
       .post('/api/v1/auth/register')
       .send({
         name: 'Test Student',
-        email: 'student@test.com',
+        email: 'mahijadeja0409@gmail.com',
         password: 'Password123',
         gender: 'male',
         branch: 'Computer Science',
         guardian: {
           name: 'Student Parent',
           phone: '9876543210',
-          email: 'parent@student.com',
+          email: 'mahijadeja0409@gmail.com',
         },
       });
     studentToken = studentRes.body.data.token;
@@ -77,7 +77,7 @@ describe('Student Endpoints', () => {
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.student).toHaveProperty('name', 'Test Student');
-      expect(res.body.data.student).toHaveProperty('email', 'student@test.com');
+      expect(res.body.data.student).toHaveProperty('email', 'mahijadeja0409@gmail.com');
       expect(res.body.data.student).toHaveProperty('user_id');
     });
 

@@ -53,7 +53,7 @@ describe('Hostel Endpoints', () => {
         guardian: {
           name: 'Parent One',
           phone: '9876543210',
-          email: 'parent1@test.com',
+          email: 'mahijadeja0409@gmail.com',
         },
       });
 
@@ -72,7 +72,7 @@ describe('Hostel Endpoints', () => {
         guardian: {
           name: 'Parent Two',
           phone: '9876543211',
-          email: 'parent2@test.com',
+          email: 'mahijadeja0409@gmail.com',
         },
       });
 
@@ -524,7 +524,7 @@ describe('Hostel Endpoints', () => {
           guardian: {
             name: 'Parent Three',
             phone: '9876543222',
-            email: 'parent3@test.com',
+            email: 'mahijadeja0409@gmail.com',
           },
         });
 
@@ -741,7 +741,7 @@ describe('Hostel Endpoints', () => {
           guardian: {
             name: 'Parent Three',
             phone: '9876543222',
-            email: 'parent3@test.com',
+            email: 'mahijadeja0409@gmail.com',
           },
         });
 
@@ -761,7 +761,7 @@ describe('Hostel Endpoints', () => {
           guardian: {
             name: 'Parent Four',
             phone: '9876543223',
-            email: 'parent4@test.com',
+            email: 'mahijadeja0409@gmail.com',
           },
         });
 

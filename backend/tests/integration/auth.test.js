@@ -16,7 +16,7 @@ describe('Auth Endpoints', () => {
     guardian: {
       name: 'Suresh Patil',
       phone: '9876543210',
-      email: 'guardian@example.com',
+      email: 'mahijadeja0409@gmail.com',
     },
   };
 
@@ -334,7 +334,7 @@ describe('Auth Endpoints', () => {
         .post('/api/v1/auth/register')
         .send({
           name: 'Student User',
-          email: 'student@test.com',
+          email: 'mahijadeja0409@gmail.com',
           password: 'Password123',
           gender: 'male',
           branch: 'Computer Science',

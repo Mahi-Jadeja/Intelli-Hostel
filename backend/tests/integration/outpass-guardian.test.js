@@ -5,6 +5,14 @@ import User from '../../src/models/User.js';
 import Student from '../../src/models/Student.js';
 import Outpass from '../../src/models/Outpass.js';
 
+// Helper to generate dates that ALWAYS pass the "from_date cannot be in the past" validation
+const getFutureDate = (daysFromNow = 1) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  date.setHours(0, 0, 0, 0); // Normalize to midnight to match model validation
+  return date;
+};
+
 describe('Guardian Outpass Approval Endpoints', () => {
   let studentProfile;
   let validToken;
@@ -16,31 +24,37 @@ describe('Guardian Outpass Approval Endpoints', () => {
   });
 
   beforeEach(async () => {
+    // 1. Clean DB
     await User.deleteMany({});
     await Student.deleteMany({});
     await Outpass.deleteMany({});
 
-    // Create student
-    await request(app).post('/api/v1/auth/register').send({
-      name: 'Test Student',
-      email: 'test@test.com',
-      password: 'Password123',
-      gender: 'male',
-      branch: 'Computer Science',
-      guardian: {
-        name: 'Guardian',
-        phone: '9876543210',
-        email: 'guardian@test.com',
-      },
-    });
+    // 2. Create student
+    const regRes = await request(app)
+      .post('/api/v1/auth/register')
+      .send({
+        name: 'Test Student',
+        email: 'test@test.com',
+        password: 'Password123',
+        gender: 'male',
+        branch: 'Computer Science',
+        guardian: {
+          name: 'Guardian',
+          phone: '9876543210',
+          email: 'guardian@test.com',
+        },
+      })
+      .expect(201); // Ensure registration succeeds
 
     studentProfile = await Student.findOne({ email: 'test@test.com' });
+    if (!studentProfile) throw new Error('Student profile not found after registration');
 
-    // Valid pending outpass
+    // 3. Create valid pending outpass
+    // from_date is TOMORROW, so it passes the "not in the past" check
     const validOutpass = await Outpass.create({
       student_id: studentProfile._id,
-      from_date: new Date('2025-12-01'),
-      to_date: new Date('2025-12-03'),
+      from_date: getFutureDate(1),
+      to_date: getFutureDate(3),
       reason: 'Family visit',
       guardian_email: 'guardian@test.com',
       status: 'pending',
@@ -48,15 +62,16 @@ describe('Guardian Outpass Approval Endpoints', () => {
     });
     validToken = validOutpass.approval_token;
 
-    // Expired outpass
+    // 4. Create expired outpass
+    // Token expires YESTERDAY, but dates are TOMORROW (valid outpass, expired token)
     const expiredOutpass = await Outpass.create({
       student_id: studentProfile._id,
-      from_date: new Date('2020-01-01'),
-      to_date: new Date('2020-01-03'),
+      from_date: getFutureDate(1),
+      to_date: getFutureDate(3),
       reason: 'Expired test',
       guardian_email: 'guardian@test.com',
       status: 'pending',
-      token_expires_at: new Date('2020-01-01'),
+      token_expires_at: getFutureDate(-1), // Expired token
       email_sent: true,
     });
     expiredToken = expiredOutpass.approval_token;
@@ -82,7 +97,7 @@ describe('Guardian Outpass Approval Endpoints', () => {
     it('should reject expired token', async () => {
       await request(app)
         .get(`/api/v1/outpass/guardian-action/${expiredToken}`)
-        .expect(400);
+        .expect(400); // Controller should reject expired tokens
     });
 
     it('should reject invalid token', async () => {
@@ -106,8 +121,19 @@ describe('Guardian Outpass Approval Endpoints', () => {
     });
 
     it('should reject outpass successfully', async () => {
+      // Create a fresh outpass for this test to avoid conflicts
+      const freshOutpass = await Outpass.create({
+        student_id: studentProfile._id,
+        from_date: getFutureDate(1),
+        to_date: getFutureDate(3),
+        reason: 'Another visit',
+        guardian_email: 'guardian@test.com',
+        status: 'pending',
+        email_sent: true,
+      });
+
       const res = await request(app)
-        .patch(`/api/v1/outpass/guardian-action/${validToken}/decision`)
+        .patch(`/api/v1/outpass/guardian-action/${freshOutpass.approval_token}/decision`)
         .send({ decision: 'rejected' })
         .expect(200);
 
@@ -123,7 +149,7 @@ describe('Guardian Outpass Approval Endpoints', () => {
       await request(app)
         .patch(`/api/v1/outpass/guardian-action/${validToken}/decision`)
         .send({ decision: 'rejected' })
-        .expect(400);
+        .expect(400); // Should fail because already approved
     });
   });
 });

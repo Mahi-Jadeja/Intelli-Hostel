@@ -1,37 +1,29 @@
+import { jest } from '@jest/globals';
 import mongoose from 'mongoose';
 import request from 'supertest';
-import { jest } from '@jest/globals';
 
-// ✅ Mock BEFORE imports
+// ✅ 1. Use unstable_mockModule for ESM (not jest.mock)
 jest.unstable_mockModule('../../src/utils/email.js', () => ({
-  sendEmail: jest.fn().mockResolvedValue({ success: true }),
-  sendPaymentReminder: jest.fn().mockResolvedValue(),
+  __esModule: true,
+  sendPaymentReminder: jest.fn().mockResolvedValue({ success: true, messageId: 'test' }),
+  sendEmail: jest.fn().mockResolvedValue({ success: true })
 }));
 
-// Static imports (safe)
-import User from '../../src/models/User.js';
-import Student from '../../src/models/Student.js';
-import Payment from '../../src/models/Payment.js';
+// ✅ 2. Dynamically import the mocked module AND your app
+const emailUtils = await import('../../src/utils/email.js');
+const { default: User } = await import('../../src/models/User.js');
+const { default: Student } = await import('../../src/models/Student.js');
+const { default: Payment } = await import('../../src/models/Payment.js');
 
-let app;
-let sendPaymentReminder;
+// ✅ 3. Import app dynamically so it uses the mocked email module
+const { default: app } = await import('../../src/app.js');
 
 describe('Payment Reminder Endpoints', () => {
   let adminToken;
   let studentProfile;
 
   beforeAll(async () => {
-    // ✅ Import mocked module AFTER mocking
-    const emailModule = await import('../../src/utils/email.js');
-    sendPaymentReminder = emailModule.sendPaymentReminder;
-
-    // ✅ Import app AFTER mocking (VERY IMPORTANT)
-    app = (await import('../../src/app.js')).default;
-
-    const mongoUri =
-      process.env.MONGODB_URI ||
-      'mongodb://localhost:27017/intellihostel_test';
-
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/intellihostel_test';
     await mongoose.connect(mongoUri);
   });
 
@@ -39,43 +31,38 @@ describe('Payment Reminder Endpoints', () => {
     await User.deleteMany({});
     await Student.deleteMany({});
     await Payment.deleteMany({});
+    
+    // ✅ Clear mock history between tests
     jest.clearAllMocks();
 
-    // Create student
+    // Create student...
     await request(app).post('/api/v1/auth/register').send({
       name: 'Remind Me',
-      email: 'remind@test.com',
+      email: 'mahijadeja0409@gmail.com',
       password: 'Password123',
       gender: 'male',
       branch: 'Computer Science',
-      guardian: {
-        name: 'Guardian',
-        phone: '1234567890',
-        email: 'guardian@test.com',
-      },
+      guardian: { name: 'Guardian', phone: '1234567890', email: 'parent@student.com' },
     });
 
-    studentProfile = await Student.findOne({
-      email: 'remind@test.com',
-    });
+    studentProfile = await Student.findOne({ email: 'mahijadeja0409@gmail.com' });
 
-    // Create admin
+    // Create admin...
     await User.create({
       name: 'Admin',
-      email: 'mahijadeja0409@gmail.com',
+      email: 'admin_reminder@test.com',
       password: 'Admin123',
       role: 'admin',
     });
 
     const res = await request(app)
       .post('/api/v1/auth/login')
-      .send({
-        email: 'mahijadeja0409@gmail.com',
-        password: 'Admin123',
-      });
+      .send({ email: 'admin_reminder@test.com', password: 'Admin123' });
 
     adminToken = res.body.data.token;
   });
+
+
 
   afterAll(async () => {
     await User.deleteMany({});
@@ -102,7 +89,9 @@ describe('Payment Reminder Endpoints', () => {
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.emailsSent).toBe(1);
-      expect(sendPaymentReminder).toHaveBeenCalled();
+      
+      // ✅ 4. Assert on the NAMESPACE property, NOT a destructured variable
+      expect(emailUtils.sendPaymentReminder).toHaveBeenCalled();
 
       const updated = await Payment.findById(payment._id);
       expect(updated.reminder_count).toBe(1);

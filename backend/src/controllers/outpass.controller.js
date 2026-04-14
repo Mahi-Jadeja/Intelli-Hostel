@@ -319,7 +319,15 @@ export const decideOutpass = async (req, res, next) => {
       );
     }
 
-    outpass.status = status;
+    // ✅ FIX: Map API payload to valid Mongoose enum before saving
+    if (status === 'rejected') {
+      outpass.status = 'guardian_rejected';
+    } else if (status === 'approved') {
+      outpass.status = 'approved';
+    } else {
+      return next(new AppError('Invalid status. Must be "approved" or "rejected".', 400));
+    }
+
     outpass.approved_by = req.user.id;
 
     if (admin_remark !== undefined) {

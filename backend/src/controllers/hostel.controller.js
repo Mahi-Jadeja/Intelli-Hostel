@@ -62,7 +62,7 @@ export const upsertHostelConfig = async (req, res, next) => {
         default_capacity,
       },
       {
-        new: true,
+        returnDocument: 'after',
         upsert: true,
         runValidators: true,
         setDefaultsOnInsert: true,
