@@ -187,7 +187,8 @@ export const getRooms = async (req, res, next) => {
 
     const rooms = await Room.find(filter)
       .sort({ hostel_block: 1, floor: 1, room_no: 1 })
-      .populate('students', 'name email college_id branch year phone bed_no');
+      // FIX: Added 'gender' to populate select so student gender is available
+      .populate('students', 'name email college_id branch year phone bed_no gender');
 
     sendSuccess(res, 200, 'Rooms retrieved successfully', { rooms });
   } catch (error) {
@@ -237,7 +238,11 @@ export const getRoomLayout = async (req, res, next) => {
 
     const rooms = await Room.find({ hostel_block: selectedBlock })
       .sort({ floor: 1, room_no: 1 })
-      .populate('students', 'name email college_id branch year phone bed_no');
+      // FIX: Added 'gender' to populate select so student gender is
+      // available when AdminStudents page extracts allocated students
+      // from layout data. Without gender, frontend gender filtering
+      // always returns 0 results.
+      .populate('students', 'name email college_id branch year phone bed_no gender');
 
     // Group rooms floor-wise
     const floorsMap = {};
@@ -322,7 +327,14 @@ export const getEligibleStudents = async (req, res, next) => {
     const students = await Student.find(filter)
       .sort({ name: 1 })
       .limit(Number(limit))
-      .select('name email college_id branch year phone');
+      // FIX: Added 'gender' to select projection.
+      // Without this, student.gender is undefined on the frontend.
+      // The RoomLayout manual allocation modal filters eligible students
+      // by gender to match the block's gender type.
+      // Previously: student.gender === 'male' → undefined === 'male' → false
+      // Every student was filtered OUT → 0 eligible students shown.
+      // Now gender is included → filtering works correctly.
+      .select('name email college_id branch year phone gender');
 
     sendSuccess(res, 200, 'Eligible students retrieved successfully', {
       students,
@@ -331,6 +343,7 @@ export const getEligibleStudents = async (req, res, next) => {
     next(error);
   }
 };
+
 /**
  * Preview bulk room allocation
  *
@@ -373,6 +386,7 @@ export const executeBulkAllocation = async (req, res, next) => {
     next(error);
   }
 };
+
 /**
  * Allocate a student to a room
  *
@@ -452,7 +466,7 @@ export const allocateStudentToRoom = async (req, res, next) => {
     student.bed_no = nextBedNo;
     await student.save();
 
-    await room.populate('students', 'name email college_id branch year phone bed_no');
+    await room.populate('students', 'name email college_id branch year phone bed_no gender');
 
     sendSuccess(res, 200, 'Student allocated successfully', {
       room,

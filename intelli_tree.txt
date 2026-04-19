@@ -1,0 +1,173 @@
+.
+├── .gitignore
+├── backend
+│   ├── .env
+│   ├── .env.example
+│   ├── jest.config.js
+│   ├── logs
+│   │   ├── combined.log
+│   │   └── error.log
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── src
+│   │   ├── app.js
+│   │   ├── config
+│   │   │   ├── db.js
+│   │   │   ├── env.js
+│   │   │   ├── logger.js
+│   │   │   ├── passport.js
+│   │   │   └── swagger.js
+│   │   ├── constants
+│   │   │   └── enums.js
+│   │   ├── controllers
+│   │   │   ├── auth.controller.js
+│   │   │   ├── complaint.controller.js
+│   │   │   ├── hostel.controller.js
+│   │   │   ├── outpass.controller.js
+│   │   │   ├── payment.controller.js
+│   │   │   └── student.controller.js
+│   │   ├── middleware
+│   │   │   ├── auth.js
+│   │   │   ├── errorHandler.js
+│   │   │   ├── rateLimiter.js
+│   │   │   └── validate.js
+│   │   ├── models
+│   │   │   ├── Complaint.js
+│   │   │   ├── HostelConfig.js
+│   │   │   ├── Outpass.js
+│   │   │   ├── Payment.js
+│   │   │   ├── Room.js
+│   │   │   ├── Student.js
+│   │   │   └── User.js
+│   │   ├── routes
+│   │   │   └── v1
+│   │   │       ├── auth.routes.js
+│   │   │       ├── complaint.routes.js
+│   │   │       ├── hostel.routes.js
+│   │   │       ├── index.js
+│   │   │       ├── outpass.routes.js
+│   │   │       ├── payment.routes.js
+│   │   │       └── student.routes.js
+│   │   ├── seeds
+│   │   │   ├── admin.seed.js
+│   │   │   └── migrateStudentData.js
+│   │   ├── server.js
+│   │   ├── utils
+│   │   │   ├── AppError.js
+│   │   │   ├── allocation.js
+│   │   │   ├── cron.js
+│   │   │   ├── email.js
+│   │   │   ├── escalation.js
+│   │   │   ├── pagination.js
+│   │   │   ├── paymentReminder.js
+│   │   │   ├── response.js
+│   │   │   └── token.js
+│   │   └── validations
+│   │       ├── auth.validation.js
+│   │       ├── complaint.validation.js
+│   │       ├── hostel.validation.js
+│   │       ├── outpass.validation.js
+│   │       ├── payment.validation.js
+│   │       └── student.validation.js
+│   └── tests
+│       ├── helpers
+│       │   ├── createTestUser.js
+│       │   └── getAuthToken.js
+│       ├── integration
+│       │   ├── auth.test.js
+│       │   ├── complaints.test.js
+│       │   ├── health.test.js
+│       │   ├── hostel.test.js
+│       │   ├── outpass-guardian.test.js
+│       │   ├── outpass.test.js
+│       │   ├── payment-reminders.test.js
+│       │   ├── payments.test.js
+│       │   ├── student-room-preference.test.js
+│       │   └── student.test.js
+│       ├── setup.js
+│       └── unit
+│           ├── models
+│           │   ├── outpass.test.js
+│           │   ├── room.test.js
+│           │   └── user.test.js
+│           └── utils
+│               └── escalation.test.js
+├── frontend
+│   ├── .env
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── favicon.svg
+│   │   └── icons.svg
+│   ├── src
+│   │   ├── App.jsx
+│   │   ├── assets
+│   │   │   └── hero.png
+│   │   ├── components
+│   │   │   ├── __tests__
+│   │   │   │   ├── OutpassPage.test.jsx
+│   │   │   │   ├── PaymentsPage.test.jsx
+│   │   │   │   ├── ProtectedRoute.test.jsx
+│   │   │   │   └── RoomLayoutPage.test.jsx
+│   │   │   ├── layout
+│   │   │   │   ├── DashboardLayout.jsx
+│   │   │   │   ├── Sidebar.jsx
+│   │   │   │   └── TopBar.jsx
+│   │   │   ├── shared
+│   │   │   │   ├── ErrorBoundary.jsx
+│   │   │   │   └── ProtectedRoute.jsx
+│   │   │   └── ui
+│   │   │       ├── Badge.jsx
+│   │   │       ├── Card.jsx
+│   │   │       ├── EmptyState.jsx
+│   │   │       ├── Skeleton.jsx
+│   │   │       └── StatCard.jsx
+│   │   ├── constants
+│   │   │   └── enums.js
+│   │   ├── context
+│   │   │   └── AuthContext.jsx
+│   │   ├── hooks
+│   │   ├── index.css
+│   │   ├── lib
+│   │   │   └── axios.js
+│   │   ├── main.jsx
+│   │   ├── pages
+│   │   │   ├── admin
+│   │   │   │   ├── Complaints.jsx
+│   │   │   │   ├── Outpass.jsx
+│   │   │   │   ├── Payments.jsx
+│   │   │   │   └── RoomLayout.jsx
+│   │   │   ├── errors
+│   │   │   │   └── NotFound.jsx
+│   │   │   ├── public
+│   │   │   │   ├── GuardianAction.jsx
+│   │   │   │   ├── Landing.jsx
+│   │   │   │   ├── Login.jsx
+│   │   │   │   ├── OAuthCallback.jsx
+│   │   │   │   └── Register.jsx
+│   │   │   └── student
+│   │   │       ├── Complaints.jsx
+│   │   │       ├── Outpass.jsx
+│   │   │       ├── Overview.jsx
+│   │   │       ├── Payments.jsx
+│   │   │       ├── Profile.jsx
+│   │   │       ├── Room.jsx
+│   │   │       └── RoomPreference.jsx
+│   │   ├── services
+│   │   │   ├── complaint.service.js
+│   │   │   ├── hostel.service.js
+│   │   │   ├── outpass.service.js
+│   │   │   ├── payment.service.js
+│   │   │   └── student.service.js
+│   │   └── test
+│   │       └── setup.js
+│   └── vite.config.js
+├── intelli_tree.txt
+└── package.json
+
+40 directories, 131 files

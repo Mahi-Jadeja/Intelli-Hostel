@@ -1,0 +1,82 @@
+d4e874c9853411ead4532a5b43886bbf28e0b583 | Mahi Jadeja | 2026-04-14 15:09:05 +0530 | fix(tests): resolve all integration & unit test failures
+85451ad322af27224de8c8b3ddb672ddd4f20ca2 | Mahi Jadeja | 2026-04-08 14:40:14 +0530 | feat: add custom 404 not found page
+57d78479369a17e251955271038b3fb2fc738baa | Mahi Jadeja | 2026-04-08 14:38:25 +0530 | feat: add error boundary component for graceful error handling
+944d45385210072a1386bf4762af6f099a27c61a | Mahi Jadeja | 2026-04-08 14:37:36 +0530 | feat: create responsive dashboard layout with mobile sidebar toggle
+6a05f6ad1db2488c85ad3d62c509771231a5895e | Mahi Jadeja | 2026-04-08 14:37:30 +0530 | feat: create responsive dashboard layout with mobile sidebar toggle
+16eb87c16513cc62e9fd1901e85e82a0b161d818 | Mahi Jadeja | 2026-04-08 14:06:48 +0530 | feat: wire admin complaints route and sidebar link
+c9a7134bc5da69c696ba6a5c76773c97f8edccfd | Mahi Jadeja | 2026-04-08 14:05:38 +0530 | feat: create admin complaints management page with filtering and status updates
+127960f9b7390b8408a9d5e6e982ff152a4a9143 | Mahi Jadeja | 2026-04-08 14:04:21 +0530 | feat: implement student room floor layout with privacy filters and unallocated preview
+e3dce29e05a7675c3a10db11ded0cf1f498996e3 | Mahi Jadeja | 2026-04-08 14:03:02 +0530 | feat: add student service methods for room layout and preview
+2a7d713738bdb75b748c4c30984bec5d63c0f46f | Mahi Jadeja | 2026-04-08 14:02:17 +0530 | feat: wire student layout routes
+27b8b19e7a91eba7c6c6569257dcb720e0e34ef3 | Mahi Jadeja | 2026-04-08 13:59:55 +0530 | test: add integration tests for payment reminder manual trigger and tracking
+71afce55192817c927f41962e4eb5d62de4b3e73 | Mahi Jadeja | 2026-04-08 13:45:41 +0530 | feat: create admin payments page with manual reminder trigger UI
+4b032eef7c5aaf91d0227ef0a9ac1e6b77280f92 | Mahi Jadeja | 2026-04-08 13:42:27 +0530 | feat: wire payment reminder route and add frontend service method
+55f791af74e917e093ac650090fd032560d1cbff | Mahi Jadeja | 2026-04-08 13:40:03 +0530 | feat: add manual payment reminder trigger endpoint for admins
+5f848565058b3324271bb2871f2153f223f696b7 | Mahi Jadeja | 2026-04-08 13:32:23 +0530 | chore: wire payment reminders into daily cron job
+2cb63952f78df910f96719a647df341b3d66b6ef | Mahi Jadeja | 2026-04-08 13:30:01 +0530 | feat: create payment reminder processing utility with milestone logic
+bd8bd94aa9460de2b9653cc8a5e491a19cc17959 | Mahi Jadeja | 2026-04-08 13:26:28 +0530 | feat: add payment reminder email template and function
+aff4e5cfe5ccc26ab138d95d8c146f1d7b848814 | Mahi Jadeja | 2026-04-08 13:25:37 +0530 | feat: add reminder tracking fields to payment model
+6221f7cfe7f5bbbff6ed82894b7f37f3196cb0f3 | Mahi Jadeja | 2026-04-08 13:24:18 +0530 | test: add integration tests for guardian outpass approval flow
+32783415af00f267e19b4f837573db2388b78db4 | Mahi Jadeja | 2026-04-08 13:22:40 +0530 | chore: wire cron scheduler into server startup
+6c59b087a61a16248d6a0e04170007c4bcea1dc1 | Mahi Jadeja | 2026-04-08 13:21:32 +0530 | feat: add daily cron job for outpass expiry and email retry
+d1bafb71ff890eada40d28d3a736235cbfa08f0d | Mahi Jadeja | 2026-04-08 12:04:12 +0530 | feat: wire guardian action page as public route
+970106c57f8d408fdbaa8d1322601c9b520e3c2f | Mahi Jadeja | 2026-04-08 11:52:11 +0530 | feat: add public guardian outpass approval page
+c67e4364ae3b3b08c7cd0dbd73eb94d50625c66e | Mahi Jadeja | 2026-04-08 11:45:37 +0530 | feat: add public guardian outpass approval routes and controller logic
+68534507a01c97bfb8037937cd2dcf52e4289cde | Mahi Jadeja | 2026-04-08 11:42:54 +0530 | feat: update outpass controller to generate secure token and trigger guardian approval email
+a2d4473f99656f65324edc65be4e28cba69abdc2 | Mahi Jadeja | 2026-04-08 11:38:15 +0530 | feat: update outpass model with guardian approval token, expiry, and strict date validation
+4211042063a5053088b56f2a6a42befea43d8323 | Mahi Jadeja | 2026-04-08 11:37:34 +0530 | chore: install nodemailer and configure Gmail SMTP email utility
+f8433d7ff09308ebd451b0c05355009d7cd8d3cf | Mahi Jadeja | 2026-04-08 11:04:25 +0530 | feat: complete phase 8.2 advanced room allocation system with preview, execute, preferences, branch mode, and admin UI
+a6d45551212fd1620619bb1d0e1040bc7a127a9a | Mahi Jadeja | 2026-04-08 10:59:27 +0530 | feat: complete backend support for branch-based bulk room allocation
+393df61072440e44fd05bbb64e8afebe41ed2892 | Mahi Jadeja | 2026-04-08 10:57:19 +0530 | feat: implement branch-based bulk room allocation engine
+2ae7ef94c6f1789fd73c63df1850618c4c5813fc | Mahi Jadeja | 2026-04-08 10:56:26 +0530 | feat: allow branch mode in bulk room allocation validation
+b8235ee59e60da8554ab0e2cca71653308318693 | Mahi Jadeja | 2026-04-08 10:49:15 +0530 | test: add integration tests for student room preference APIs
+a38e5fcae27d73bdec912806ae93bd5996d03e6e | Mahi Jadeja | 2026-04-08 10:48:05 +0530 | feat: implement preference-based bulk room allocation and selected-block reshuffle scope expansion
+192adb1867011b63b49eeed584ff148aada725ae | Mahi Jadeja | 2026-04-08 10:46:42 +0530 | feat: allow preference mode in bulk room allocation validation
+23284f5976170edfa01e8af6a5b97860a612a96e | Mahi Jadeja | 2026-04-08 10:44:54 +0530 | feat: wire student room preference page into routes and sidebar
+4694b492f094bbfec51521dfd11fd68604be423c | Mahi Jadeja | 2026-04-08 10:43:19 +0530 | feat: add student room preference page
+007c50a1a2dcd3222ae9af70cb0b503d801d4387 | Mahi Jadeja | 2026-04-08 10:42:32 +0530 | feat: add frontend student service methods for room preference
+735ea2268690bcec9cc710d637f253809973ff82 | Mahi Jadeja | 2026-04-08 10:41:30 +0530 | feat: add student room preference API routes
+df160bbc10888fbd6263da963fed8bb90e5f803a | Mahi Jadeja | 2026-04-08 10:39:56 +0530 | feat: add student room preference and roommate search controller endpoints
+e90e26706b6e0a4b5138afb5eb31660f71bf04f2 | Mahi Jadeja | 2026-04-08 10:38:53 +0530 | feat: add student room preference validation schema
+b782674255ed4d5b7d2943c725deafaa74249eaf | Mahi Jadeja | 2026-04-08 10:37:56 +0530 | feat: add preferred roommate field to student model
+bf0a5972084c646be85cf767bee666f1628d431f | Mahi Jadeja | 2026-04-08 10:27:42 +0530 | feat: add frontend hostel service methods for bulk allocation preview and execution
+6a5a4f9e6e7539459927a90523b0df4d59d91177 | Mahi Jadeja | 2026-04-08 10:26:22 +0530 | feat: add hostel bulk allocation preview and execute routes
+83b0f55f4ddacf34d2c85a3a8d685e5ce245e544 | Mahi Jadeja | 2026-04-08 10:23:44 +0530 | feat: add hostel bulk allocation preview and execute controllers
+0279057f075f52c5d77b7443c3be56edc8e70138 | Mahi Jadeja | 2026-04-08 10:22:35 +0530 | feat: add deterministic bulk room allocation engine for random mode preview and execution
+d8a33aca8ec22c3f1eb67f38eaf22079f87253d1 | Mahi Jadeja | 2026-04-08 10:21:43 +0530 | feat: add bulk room allocation preview and execute validation schemas
+5b623e5a388a5f5a9f41afbb7383b34adce5d87c | Mahi Jadeja | 2026-04-08 10:20:19 +0530 | feat: complete phase 8.1 core model, validation, registration, profile, and documentation revisions
+0a8c83d8231de906110b79db3c3ff6911a5ea63e | Mahi Jadeja | 2026-04-07 22:25:07 +0530 | docs: update swagger schemas for standardized student registration and hostel block gender
+eabe5102ed511dffc92e9f6a0b973307ebd95256 | Mahi Jadeja | 2026-04-07 19:34:20 +0530 | chore: add migration script for standardized student branch and guardian data cleanup
+6ecaa2e9f0eb9024904bb3c9d5f9ed151ea053f6 | Mahi Jadeja | 2026-04-07 19:32:02 +0530 | feat: enforce standardized student registration and hostel block gender configuration
+d9acc887d17aed3769079f5c6d27815b2d226762 | Mahi Jadeja | 2026-04-07 14:39:17 +0530 | chore: complete Phase 7 - hostel management system with room generation, layout, allocation, deallocation, admin UI, and tests
+3746fa2a164dd8f8e107fa015e8bb44344759e82 | Mahi Jadeja | 2026-04-07 14:32:36 +0530 | test: add frontend tests for admin room layout page
+0ed9b11a976e740079471e9c27be129ce0e9578f | Mahi Jadeja | 2026-04-07 14:31:54 +0530 | feat: add admin room management UI with config form, room grid, room modal, and allocation flow
+3ce18caf5c12b5d0e31d1a6dea73268e312b193e | Mahi Jadeja | 2026-04-07 14:11:55 +0530 | test: add hostel integration tests for config, room generation, layout, allocation, deallocation, and eligible students
+62d297cc8bdf2b275ae06327d7edbf4c486ff8cc | Mahi Jadeja | 2026-04-07 14:08:11 +0530 | feat: add hostel backend with config, room generation, layout, eligible students, allocation, and deallocation APIs
+033ddcf34876093c0a584104938bc8794e88bae0 | Mahi Jadeja | 2026-04-07 14:04:16 +0530 | chore: complete Phase 6 - payments system with reminders, payment history, admin creation, mark-as-paid flow, and tests
+1dccc0e11cf8c49cf4622fefb485ea8b98c2aec6 | Mahi Jadeja | 2026-04-07 14:03:17 +0530 | feat: add student payments page with reminders, payment history, and mark-as-paid modal
+59a9330aca68f05ed2f4bf60d6d2c0377d2e45ac | Mahi Jadeja | 2026-04-07 14:01:32 +0530 | test: add integration tests for payment creation, reminders, listing, and mark-as-paid flow
+e0f4d94212a64066223f5424e1e81848e9a90b25 | Mahi Jadeja | 2026-04-07 13:59:05 +0530 | feat: add payments backend with validation, controller, routes, reminders, and student pay flow
+a1cb441ffea8e9b9bea3bfb8a9f746b1acebe6d9 | Mahi Jadeja | 2026-04-07 13:26:10 +0530 | test: add frontend tests for student outpass page
+b6c72f748a29f1fbe9e6258ee435376f974c2e63 | Mahi Jadeja | 2026-04-07 13:24:55 +0530 | feat: add student outpass page with request form, history, and pagination
+825f48f689e8dd054f062c5255b3bfeae19a0ba2 | Mahi Jadeja | 2026-04-07 13:22:34 +0530 | test: add integration tests for outpass creation, history, admin listing, and approval flow
+52be140d5a7cef52d3d5829efa4bbe73daa36a29 | Mahi Jadeja | 2026-04-07 13:19:40 +0530 | feat: add outpass backend with validation, controller, routes, and admin decision flow
+371b99e77ee80d9727ce38b7848431017c6f846d | Mahi Jadeja | 2026-04-06 16:58:27 +0530 | feat: add student complaints page with create, list, delete, and pagination
+a343cdc179a9a603d26726ff24ee9b75ccd08b9a | Mahi Jadeja | 2026-04-06 16:56:29 +0530 | test: add comprehensive complaint integration tests including auto-escalation
+3f404217edf9687a282f53f7d0b9c29c793c8d97 | Mahi Jadeja | 2026-04-06 16:55:21 +0530 | feat: add complaints backend - controller, routes, validation with auto-escalation and stats
+3773ae47740ba3a02fe332dac1ef4563b0b9df21 | Mahi Jadeja | 2026-04-06 14:36:25 +0530 | feat: add reusable UI components (Card, Badge, Skeleton, StatCard, EmptyState) and dashboard layout (Sidebar, TopBar) & feat: setup nested student routes with dashboard layout and API service
+52c0031db441f1af5a3700ddc17881ea67b5c5c5 | Mahi Jadeja | 2026-04-06 14:28:47 +0530 | test: add student endpoint integration tests - profile CRUD, room, dashboard stats
+86ca87c70e623de85942b0a4f4f41c096bbc9a42 | Mahi Jadeja | 2026-04-06 14:26:36 +0530 | feat: add student profile, room, and dashboard-stats endpoints with validation
+f105239ec1cebcd06e8f3081ddcc809638445afd | Mahi Jadeja | 2026-04-06 13:37:25 +0530 | feat: add student pages - Overview dashboard, Profile editor, Room allocation view
+87bc07365ee773e074e981abcba8edbbb1c6fb33 | Mahi Jadeja | 2026-04-04 15:36:46 +0530 | feat: setup frontend auth - Router, AuthContext, ProtectedRoute, Landing, Login, Register, OAuth callback
+8895236977b24e63c60a7bd01ffa5575a15c0eb3 | Mahi Jadeja | 2026-04-03 20:58:16 +0530 | feat: add Google OAuth login with Passport.js strategy and callback
+11132c960bb5fae2c3df596033fd6fce8dba2b5b | Mahi Jadeja | 2026-04-03 15:29:26 +0530 | test: add unit tests for User model, Room model, Outpass model, and auto-escalation utility
+5eefd5ed0f7f3130cb08780c990c164a10a2e634 | Mahi Jadeja | 2026-04-03 15:16:24 +0530 | feat: add pagination utility, auto-escalation logic, and admin seed script
+9ebe6861a9756e060fa72acedcc2a7361da1a28a | Mahi Jadeja | 2026-04-03 14:58:00 +0530 | feat: create all database models - User, Student, Room, HostelConfig, Complaint, Outpass, Payment
+8007a0a655c95ebf92087cbdfcedfae1a6a8f1f9 | Mahi Jadeja | 2026-04-03 14:39:26 +0530 | feat: setup API v1 route structure with version prefix
+2eb4bc55525bbeca68bb93735f769c47d2dae16f | Mahi Jadeja | 2026-04-03 14:30:36 +0530 | test: setup testing infrastructure and add health check integration tests
+70271a1d7f582bf42dac55afd74bc4dac3e83e28 | Mahi Jadeja | 2026-04-03 14:20:03 +0530 | feat: setup frontend with Vite, React, Tailwind CSS, and all dependencies
+edaf5d7b2e892c9cabf2542e38064c5f660526d3 | Mahi Jadeja | 2026-04-03 13:59:45 +0530 | feat: setup Swagger API documentation at /api-docs
+c174a016273ca284d87221a6045e2b8233262c56 | Mahi Jadeja | 2026-04-03 13:54:47 +0530 | feat: setup Express app with security middleware, logging, error handling, and graceful shutdown
+132c70c284d5970454827a400feda4381509eb6d | Mahi Jadeja | 2026-04-03 13:21:45 +0530 | chore: setup backend core - env config, database, logger, error handling, validation, rate limiter
+d4b112b4fd71768bedcef98143327651194f9e99 | Mahi Jadeja | 2026-04-03 12:38:29 +0530 | chore: initialize project structure with monorepo layout

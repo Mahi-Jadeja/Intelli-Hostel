@@ -1,0 +1,918 @@
+commit d4e874c9853411ead4532a5b43886bbf28e0b583
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 14 15:09:05 2026 +0530
+
+    fix(tests): resolve all integration & unit test failures
+    
+    - Fix auth, outpass, payment-reminders, and hostel test suites
+    - Add dynamic date generation to bypass Outpass validation rules
+    - Fix ESM mocking for payment reminder email utility
+    - Align admin decision controller with Mongoose enum validation
+    - Ensure all 164 tests pass with 0 failures & 0 flaky runs
+    - Clean up duplicate indexes & deprecated Mongoose options
+    - Add jest.clearAllMocks() to prevent test state leakage
+    
+    Closes #test-fixes
+
+ backend/src/controllers/hostel.controller.js       |   2 +-
+ backend/src/controllers/outpass.controller.js      |  10 +-
+ backend/tests/integration/auth.test.js             |   4 +-
+ backend/tests/integration/complaints.test.js       |   6 +-
+ backend/tests/integration/hostel.test.js           |  10 +-
+ backend/tests/integration/outpass-guardian.test.js |  72 ++-
+ backend/tests/integration/outpass.test.js          | 571 ++++++++++-----------
+ .../tests/integration/payment-reminders.test.js    |  65 +--
+ backend/tests/integration/payments.test.js         |  95 +---
+ backend/tests/integration/student.test.js          |   6 +-
+ backend/tests/unit/models/outpass.test.js          |  63 +--
+ 11 files changed, 433 insertions(+), 471 deletions(-)
+
+commit 85451ad322af27224de8c8b3ddb672ddd4f20ca2
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:40:14 2026 +0530
+
+    feat: add custom 404 not found page
+
+ frontend/src/pages/errors/NotFound.jsx | 27 +++++++++++++--------------
+ 1 file changed, 13 insertions(+), 14 deletions(-)
+
+commit 57d78479369a17e251955271038b3fb2fc738baa
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:38:25 2026 +0530
+
+    feat: add error boundary component for graceful error handling
+
+ frontend/src/components/shared/ErrorBoundary.jsx | 62 +++++++++---------------
+ 1 file changed, 22 insertions(+), 40 deletions(-)
+
+commit 944d45385210072a1386bf4762af6f099a27c61a
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:37:36 2026 +0530
+
+    feat: create responsive dashboard layout with mobile sidebar toggle
+
+ frontend/src/App.jsx                               |   2 +
+ frontend/src/components/layout/DashboardLayout.jsx |  57 ++--
+ frontend/src/pages/admin/Complaints.jsx            | 328 +++++++++++++++++++
+ frontend/src/pages/admin/Outpass.jsx               | 345 ++++++++++++++++++++
+ frontend/src/services/complaint.service.js         | 346 ++-------------------
+ 5 files changed, 729 insertions(+), 349 deletions(-)
+
+commit 6a05f6ad1db2488c85ad3d62c509771231a5895e
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:37:30 2026 +0530
+
+    feat: create responsive dashboard layout with mobile sidebar toggle
+
+ backend/src/routes/v1/student.routes.js | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 16eb87c16513cc62e9fd1901e85e82a0b161d818
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:06:48 2026 +0530
+
+    feat: wire admin complaints route and sidebar link
+
+ frontend/src/App.jsx | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit c9a7134bc5da69c696ba6a5c76773c97f8edccfd
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:05:38 2026 +0530
+
+    feat: create admin complaints management page with filtering and status updates
+
+ frontend/src/services/complaint.service.js | 385 ++++++++++++++++++++++++-----
+ 1 file changed, 326 insertions(+), 59 deletions(-)
+
+commit 127960f9b7390b8408a9d5e6e982ff152a4a9143
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:04:21 2026 +0530
+
+    feat: implement student room floor layout with privacy filters and unallocated preview
+
+ frontend/src/pages/student/Room.jsx | 487 +++++++++++++++++++++++-------------
+ 1 file changed, 318 insertions(+), 169 deletions(-)
+
+commit e3dce29e05a7675c3a10db11ded0cf1f498996e3
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:03:02 2026 +0530
+
+    feat: add student service methods for room layout and preview
+
+ frontend/src/services/student.service.js | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+commit 2a7d713738bdb75b748c4c30984bec5d63c0f46f
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 14:02:17 2026 +0530
+
+    feat: wire student layout routes
+
+ backend/src/controllers/student.controller.js | 158 ++++++++++++++++++++++++++
+ backend/src/routes/v1/student.routes.js       |  36 ++++++
+ 2 files changed, 194 insertions(+)
+
+commit 27b8b19e7a91eba7c6c6569257dcb720e0e34ef3
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:59:55 2026 +0530
+
+    test: add integration tests for payment reminder manual trigger and tracking
+
+ .../tests/integration/payment-reminders.test.js    | 152 +++++++++++++++++++++
+ 1 file changed, 152 insertions(+)
+
+commit 71afce55192817c927f41962e4eb5d62de4b3e73
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:45:41 2026 +0530
+
+    feat: create admin payments page with manual reminder trigger UI
+
+ frontend/src/App.jsx                       |   2 +
+ frontend/src/components/layout/Sidebar.jsx |   1 +
+ frontend/src/pages/admin/Payments.jsx      | 234 +++++++++++++++++++++++++++++
+ frontend/src/services/payment.service.js   |   3 +-
+ 4 files changed, 239 insertions(+), 1 deletion(-)
+
+commit 4b032eef7c5aaf91d0227ef0a9ac1e6b77280f92
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:42:27 2026 +0530
+
+    feat: wire payment reminder route and add frontend service method
+
+ backend/src/routes/v1/payment.routes.js  | 28 +++++++++++++++++++++++++++-
+ frontend/src/services/payment.service.js |  9 ++++++++-
+ 2 files changed, 35 insertions(+), 2 deletions(-)
+
+commit 55f791af74e917e093ac650090fd032560d1cbff
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:40:03 2026 +0530
+
+    feat: add manual payment reminder trigger endpoint for admins
+
+ backend/src/controllers/payment.controller.js | 43 ++++++++++++++++++++++++++-
+ backend/src/utils/cron.js                     |  2 +-
+ 2 files changed, 43 insertions(+), 2 deletions(-)
+
+commit 5f848565058b3324271bb2871f2153f223f696b7
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:32:23 2026 +0530
+
+    chore: wire payment reminders into daily cron job
+
+ backend/src/utils/cron.js | 3 +++
+ 1 file changed, 3 insertions(+)
+
+commit 2cb63952f78df910f96719a647df341b3d66b6ef
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:30:01 2026 +0530
+
+    feat: create payment reminder processing utility with milestone logic
+
+ backend/src/utils/paymentReminder.js | 137 ++++++++++++++++++++++++++++-------
+ 1 file changed, 110 insertions(+), 27 deletions(-)
+
+commit bd8bd94aa9460de2b9653cc8a5e491a19cc17959
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:26:28 2026 +0530
+
+    feat: add payment reminder email template and function
+
+ backend/src/utils/email.js | 58 ++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
+
+commit aff4e5cfe5ccc26ab138d95d8c146f1d7b848814
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:25:37 2026 +0530
+
+    feat: add reminder tracking fields to payment model
+
+ backend/src/models/Payment.js | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+commit 6221f7cfe7f5bbbff6ed82894b7f37f3196cb0f3
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:24:18 2026 +0530
+
+    test: add integration tests for guardian outpass approval flow
+
+ backend/tests/integration/outpass-guardian.test.js | 129 +++++++++++++++++++++
+ 1 file changed, 129 insertions(+)
+
+commit 32783415af00f267e19b4f837573db2388b78db4
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:22:40 2026 +0530
+
+    chore: wire cron scheduler into server startup
+
+ backend/src/server.js | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit 6c59b087a61a16248d6a0e04170007c4bcea1dc1
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 13:21:32 2026 +0530
+
+    feat: add daily cron job for outpass expiry and email retry
+
+ backend/package-lock.json     | 10 +++++
+ backend/package.json          |  1 +
+ backend/src/models/Outpass.js |  6 ++-
+ backend/src/server.js         |  1 +
+ backend/src/utils/cron.js     | 99 +++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 116 insertions(+), 1 deletion(-)
+
+commit d1bafb71ff890eada40d28d3a736235cbfa08f0d
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 12:04:12 2026 +0530
+
+    feat: wire guardian action page as public route
+
+ frontend/src/App.jsx | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+commit 970106c57f8d408fdbaa8d1322601c9b520e3c2f
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 11:52:11 2026 +0530
+
+    feat: add public guardian outpass approval page
+
+ frontend/src/pages/public/GuardianAction.jsx | 157 +++++++++++++++++++++++++++
+ 1 file changed, 157 insertions(+)
+
+commit c67e4364ae3b3b08c7cd0dbd73eb94d50625c66e
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 11:45:37 2026 +0530
+
+    feat: add public guardian outpass approval routes and controller logic
+
+ backend/src/controllers/outpass.controller.js | 93 +++++++++++++++++++++++++++
+ backend/src/routes/v1/outpass.routes.js       | 40 +++++++++++-
+ 2 files changed, 132 insertions(+), 1 deletion(-)
+
+commit 68534507a01c97bfb8037937cd2dcf52e4289cde
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 11:42:54 2026 +0530
+
+    feat: update outpass controller to generate secure token and trigger guardian approval email
+
+ backend/src/controllers/outpass.controller.js | 68 ++++++++++++++++++++++++---
+ backend/src/validations/outpass.validation.js | 10 +++-
+ 2 files changed, 70 insertions(+), 8 deletions(-)
+
+commit a2d4473f99656f65324edc65be4e28cba69abdc2
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 11:38:15 2026 +0530
+
+    feat: update outpass model with guardian approval token, expiry, and strict date validation
+
+ backend/src/models/Outpass.js | 73 +++++++++++++++++++++++++++----------------
+ 1 file changed, 46 insertions(+), 27 deletions(-)
+
+commit 4211042063a5053088b56f2a6a42befea43d8323
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 11:37:34 2026 +0530
+
+    chore: install nodemailer and configure Gmail SMTP email utility
+
+ backend/package-lock.json  | 34 ++++++++------------------
+ backend/package.json       |  1 +
+ backend/src/server.js      |  1 +
+ backend/src/utils/email.js | 60 ++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 72 insertions(+), 24 deletions(-)
+
+commit f8433d7ff09308ebd451b0c05355009d7cd8d3cf
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 11:04:25 2026 +0530
+
+    feat: complete phase 8.2 advanced room allocation system with preview, execute, preferences, branch mode, and admin UI
+
+ frontend/src/pages/admin/RoomLayout.jsx | 652 ++++++++++++++++++++++++++++++--
+ 1 file changed, 612 insertions(+), 40 deletions(-)
+
+commit a6d45551212fd1620619bb1d0e1040bc7a127a9a
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:59:27 2026 +0530
+
+    feat: complete backend support for branch-based bulk room allocation
+
+ backend/tests/integration/hostel.test.js | 194 +++++++++++++++++++++++++++++++
+ 1 file changed, 194 insertions(+)
+
+commit 393df61072440e44fd05bbb64e8afebe41ed2892
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:57:19 2026 +0530
+
+    feat: implement branch-based bulk room allocation engine
+
+ backend/src/utils/allocation.js | 149 ++++++++++++++++++++++++++++++----------
+ 1 file changed, 113 insertions(+), 36 deletions(-)
+
+commit 2ae7ef94c6f1789fd73c63df1850618c4c5813fc
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:56:26 2026 +0530
+
+    feat: allow branch mode in bulk room allocation validation
+
+ backend/src/validations/hostel.validation.js |   4 +-
+ backend/tests/integration/hostel.test.js     | 216 +++++++++++++++++++++++++++
+ 2 files changed, 218 insertions(+), 2 deletions(-)
+
+commit b8235ee59e60da8554ab0e2cca71653308318693
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:49:15 2026 +0530
+
+    test: add integration tests for student room preference APIs
+
+ .../integration/student-room-preference.test.js    | 189 +++++++++++++++++++++
+ 1 file changed, 189 insertions(+)
+
+commit a38e5fcae27d73bdec912806ae93bd5996d03e6e
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:48:05 2026 +0530
+
+    feat: implement preference-based bulk room allocation and selected-block reshuffle scope expansion
+
+ backend/src/utils/allocation.js | 666 ++++++++++++++++++++++++++++++++--------
+ 1 file changed, 531 insertions(+), 135 deletions(-)
+
+commit 192adb1867011b63b49eeed584ff148aada725ae
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:46:42 2026 +0530
+
+    feat: allow preference mode in bulk room allocation validation
+
+ backend/src/validations/hostel.validation.js | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit 23284f5976170edfa01e8af6a5b97860a612a96e
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:44:54 2026 +0530
+
+    feat: wire student room preference page into routes and sidebar
+
+ frontend/src/App.jsx                       | 2 ++
+ frontend/src/components/layout/Sidebar.jsx | 1 +
+ 2 files changed, 3 insertions(+)
+
+commit 4694b492f094bbfec51521dfd11fd68604be423c
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:43:19 2026 +0530
+
+    feat: add student room preference page
+
+ frontend/src/pages/student/RoomPreference.jsx | 320 ++++++++++++++++++++++++++
+ 1 file changed, 320 insertions(+)
+
+commit 007c50a1a2dcd3222ae9af70cb0b503d801d4387
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:42:32 2026 +0530
+
+    feat: add frontend student service methods for room preference
+
+ frontend/src/services/student.service.js | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+commit 735ea2268690bcec9cc710d637f253809973ff82
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:41:30 2026 +0530
+
+    feat: add student room preference API routes
+
+ backend/src/routes/v1/student.routes.js | 52 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 51 insertions(+), 1 deletion(-)
+
+commit df160bbc10888fbd6263da963fed8bb90e5f803a
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:39:56 2026 +0530
+
+    feat: add student room preference and roommate search controller endpoints
+
+ backend/src/controllers/student.controller.js | 219 ++++++++++++++++++++++++++
+ 1 file changed, 219 insertions(+)
+
+commit e90e26706b6e0a4b5138afb5eb31660f71bf04f2
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:38:53 2026 +0530
+
+    feat: add student room preference validation schema
+
+ backend/src/validations/student.validation.js | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+commit b782674255ed4d5b7d2943c725deafaa74249eaf
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:37:56 2026 +0530
+
+    feat: add preferred roommate field to student model
+
+ backend/src/models/Student.js            |  17 ++++-
+ backend/tests/integration/hostel.test.js | 124 ++++++++++++++++++++++++++++++-
+ 2 files changed, 138 insertions(+), 3 deletions(-)
+
+commit bf0a5972084c646be85cf767bee666f1628d431f
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:27:42 2026 +0530
+
+    feat: add frontend hostel service methods for bulk allocation preview and execution
+
+ frontend/src/services/hostel.service.js | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+commit 6a5a4f9e6e7539459927a90523b0df4d59d91177
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:26:22 2026 +0530
+
+    feat: add hostel bulk allocation preview and execute routes
+
+ backend/src/routes/v1/hostel.routes.js | 38 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+commit 83b0f55f4ddacf34d2c85a3a8d685e5ce245e544
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:23:44 2026 +0530
+
+    feat: add hostel bulk allocation preview and execute controllers
+
+ backend/src/controllers/hostel.controller.js | 46 ++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+
+commit 0279057f075f52c5d77b7443c3be56edc8e70138
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:22:35 2026 +0530
+
+    feat: add deterministic bulk room allocation engine for random mode preview and execution
+
+ backend/src/utils/allocation.js | 594 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 594 insertions(+)
+
+commit d8a33aca8ec22c3f1eb67f38eaf22079f87253d1
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:21:43 2026 +0530
+
+    feat: add bulk room allocation preview and execute validation schemas
+
+ backend/src/validations/hostel.validation.js | 76 ++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
+
+commit 5b623e5a388a5f5a9f41afbb7383b34adce5d87c
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Wed Apr 8 10:20:19 2026 +0530
+
+    feat: complete phase 8.1 core model, validation, registration, profile, and documentation revisions
+
+ backend/src/routes/v1/auth.routes.js         |  2 +-
+ backend/tests/integration/auth.test.js       | 99 +++++++++++-----------------
+ backend/tests/integration/complaints.test.js |  9 ++-
+ backend/tests/integration/hostel.test.js     |  4 ++
+ backend/tests/integration/student.test.js    |  7 ++
+ 5 files changed, 60 insertions(+), 61 deletions(-)
+
+commit 0a8c83d8231de906110b79db3c3ff6911a5ea63e
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 22:25:07 2026 +0530
+
+    docs: update swagger schemas for standardized student registration and hostel block gender
+
+ backend/src/routes/v1/auth.routes.js       | 36 +++++++++++++++++++++++++++++-
+ backend/src/routes/v1/hostel.routes.js     | 33 ++++++++++++++++++++++++---
+ backend/src/routes/v1/student.routes.js    | 12 +++++++++-
+ backend/tests/integration/hostel.test.js   | 16 ++++++++++++-
+ backend/tests/integration/outpass.test.js  |  9 +++++++-
+ backend/tests/integration/payments.test.js | 10 +++++++--
+ 6 files changed, 107 insertions(+), 9 deletions(-)
+
+commit eabe5102ed511dffc92e9f6a0b973307ebd95256
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 19:34:20 2026 +0530
+
+    chore: add migration script for standardized student branch and guardian data cleanup
+
+ backend/src/seeds/migrateStudentData.js | 129 ++++++++++++++++++++++++++++++++
+ 1 file changed, 129 insertions(+)
+
+commit 6ecaa2e9f0eb9024904bb3c9d5f9ed151ea053f6
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 19:32:02 2026 +0530
+
+    feat: enforce standardized student registration and hostel block gender configuration
+
+ backend/src/constants/enums.js                     |  36 +++++++
+ backend/src/controllers/auth.controller.js         |  30 +++---
+ backend/src/controllers/hostel.controller.js       |   2 +
+ backend/src/models/HostelConfig.js                 |  29 +++++-
+ backend/src/models/Student.js                      | 103 +++++++++++++-------
+ backend/src/validations/auth.validation.js         |  61 +++++++-----
+ backend/src/validations/hostel.validation.js       |  50 +++++-----
+ backend/src/validations/student.validation.js      |  49 ++++++----
+ ...ayments.test.js JavaScript => payments.test.js} |   0
+ frontend/src/constants/enums.js                    |  13 +++
+ frontend/src/context/AuthContext.jsx               |   5 +-
+ frontend/src/pages/admin/RoomLayout.jsx            |  65 ++++++++-----
+ frontend/src/pages/student/Profile.jsx             | 105 +++++++++------------
+ 13 files changed, 336 insertions(+), 212 deletions(-)
+
+commit d9acc887d17aed3769079f5c6d27815b2d226762
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:39:17 2026 +0530
+
+    chore: complete Phase 7 - hostel management system with room generation, layout, allocation, deallocation, admin UI, and tests
+
+ frontend/src/App.jsx | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 3746fa2a164dd8f8e107fa015e8bb44344759e82
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:32:36 2026 +0530
+
+    test: add frontend tests for admin room layout page
+
+ .../components/__tests__/RoomLayoutPage.test.jsx   | 119 +++++++++++++++++++++
+ 1 file changed, 119 insertions(+)
+
+commit 0ed9b11a976e740079471e9c27be129ce0e9578f
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:31:54 2026 +0530
+
+    feat: add admin room management UI with config form, room grid, room modal, and allocation flow
+
+ frontend/src/App.jsx                    |   1 +
+ frontend/src/pages/admin/RoomLayout.jsx | 705 ++++++++++++++++++++++++++++++++
+ frontend/src/services/hostel.service.js |  61 +++
+ 3 files changed, 767 insertions(+)
+
+commit 3ce18caf5c12b5d0e31d1a6dea73268e312b193e
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:11:55 2026 +0530
+
+    test: add hostel integration tests for config, room generation, layout, allocation, deallocation, and eligible students
+
+ backend/tests/integration/hostel.test.js | 360 +++++++++++++++++++++++++++++++
+ 1 file changed, 360 insertions(+)
+
+commit 62d297cc8bdf2b275ae06327d7edbf4c486ff8cc
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:08:11 2026 +0530
+
+    feat: add hostel backend with config, room generation, layout, eligible students, allocation, and deallocation APIs
+
+ backend/src/controllers/hostel.controller.js | 457 +++++++++++++++++++++++++++
+ backend/src/routes/v1/hostel.routes.js       | 144 +++++++++
+ backend/src/routes/v1/index.js               |   3 +-
+ backend/src/validations/hostel.validation.js |  80 +++++
+ 4 files changed, 683 insertions(+), 1 deletion(-)
+
+commit 033ddcf34876093c0a584104938bc8794e88bae0
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:04:16 2026 +0530
+
+    chore: complete Phase 6 - payments system with reminders, payment history, admin creation, mark-as-paid flow, and tests
+
+ .../src/components/__tests__/PaymentsPage.test.jsx | 82 ++++++++++++++++++++++
+ 1 file changed, 82 insertions(+)
+
+commit 1dccc0e11cf8c49cf4622fefb485ea8b98c2aec6
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:03:17 2026 +0530
+
+    feat: add student payments page with reminders, payment history, and mark-as-paid modal
+
+ frontend/src/App.jsx                     |   2 +
+ frontend/src/pages/student/Payments.jsx  | 368 +++++++++++++++++++++++++++++++
+ frontend/src/services/payment.service.js |  40 ++++
+ 3 files changed, 410 insertions(+)
+
+commit 59a9330aca68f05ed2f4bf60d6d2c0377d2e45ac
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 14:01:32 2026 +0530
+
+    test: add integration tests for payment creation, reminders, listing, and mark-as-paid flow
+
+ .../tests/integration/payments.test.js JavaScript  | 301 +++++++++++++++++++++
+ 1 file changed, 301 insertions(+)
+
+commit e0f4d94212a64066223f5424e1e81848e9a90b25
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 13:59:05 2026 +0530
+
+    feat: add payments backend with validation, controller, routes, reminders, and student pay flow
+
+ backend/src/controllers/payment.controller.js | 202 ++++++++++++++++++++++++++
+ backend/src/routes/v1/index.js                |   3 +-
+ backend/src/routes/v1/payment.routes.js       | 132 +++++++++++++++++
+ backend/src/utils/paymentReminder.js          |  33 +++++
+ backend/src/validations/payment.validation.js |  61 ++++++++
+ 5 files changed, 430 insertions(+), 1 deletion(-)
+
+commit a1cb441ffea8e9b9bea3bfb8a9f746b1acebe6d9
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 13:26:10 2026 +0530
+
+    test: add frontend tests for student outpass page
+
+ .../src/components/__tests__/OutpassPage.test.jsx  | 80 ++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
+
+commit b6c72f748a29f1fbe9e6258ee435376f974c2e63
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 13:24:55 2026 +0530
+
+    feat: add student outpass page with request form, history, and pagination
+
+ frontend/src/App.jsx                     |   2 +
+ frontend/src/pages/student/Outpass.jsx   | 344 +++++++++++++++++++++++++++++++
+ frontend/src/services/outpass.service.js |  46 +++++
+ 3 files changed, 392 insertions(+)
+
+commit 825f48f689e8dd054f062c5255b3bfeae19a0ba2
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 13:22:34 2026 +0530
+
+    test: add integration tests for outpass creation, history, admin listing, and approval flow
+
+ backend/tests/integration/outpass.test.js | 309 ++++++++++++++++++++++++++++++
+ 1 file changed, 309 insertions(+)
+
+commit 52be140d5a7cef52d3d5829efa4bbe73daa36a29
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Tue Apr 7 13:19:40 2026 +0530
+
+    feat: add outpass backend with validation, controller, routes, and admin decision flow
+
+ backend/src/controllers/outpass.controller.js | 189 ++++++++++++++++++++++++++
+ backend/src/routes/v1/index.js                |   4 +-
+ backend/src/routes/v1/outpass.routes.js       | 156 +++++++++++++++++++++
+ backend/src/validations/outpass.validation.js |  62 +++++++++
+ 4 files changed, 409 insertions(+), 2 deletions(-)
+
+commit 371b99e77ee80d9727ce38b7848431017c6f846d
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Mon Apr 6 16:58:27 2026 +0530
+
+    feat: add student complaints page with create, list, delete, and pagination
+
+ frontend/src/App.jsx                       |   3 +
+ frontend/src/pages/student/Complaints.jsx  | 442 +++++++++++++++++++++++++++++
+ frontend/src/services/complaint.service.js |  61 ++++
+ 3 files changed, 506 insertions(+)
+
+commit a343cdc179a9a603d26726ff24ee9b75ccd08b9a
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Mon Apr 6 16:56:29 2026 +0530
+
+    test: add comprehensive complaint integration tests including auto-escalation
+
+ backend/tests/integration/complaints.test.js | 496 +++++++++++++++++++++++++++
+ 1 file changed, 496 insertions(+)
+
+commit 3f404217edf9687a282f53f7d0b9c29c793c8d97
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Mon Apr 6 16:55:21 2026 +0530
+
+    feat: add complaints backend - controller, routes, validation with auto-escalation and stats
+
+ backend/src/controllers/complaint.controller.js    | 350 +++++++++++++++++++++
+ backend/src/routes/v1/complaint.routes.js          | 267 ++++++++++++++++
+ backend/src/routes/v1/index.js                     |   3 +-
+ backend/src/validations/complaint.validation.js    |  78 +++++
+ frontend/package-lock.json                         | 228 +++++++++-----
+ frontend/package.json                              |  13 +-
+ .../components/__tests__/ProtectedRoute.test.jsx   |  61 ++--
+ frontend/src/components/shared/ProtectedRoute.jsx  | 121 ++-----
+ frontend/vite.config.js                            |  35 +--
+ 9 files changed, 917 insertions(+), 239 deletions(-)
+
+commit 3773ae47740ba3a02fe332dac1ef4563b0b9df21
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Mon Apr 6 14:36:25 2026 +0530
+
+    feat: add reusable UI components (Card, Badge, Skeleton, StatCard, EmptyState) and dashboard layout (Sidebar, TopBar) & feat: setup nested student routes with dashboard layout and API service
+
+ frontend/src/App.jsx                               | 103 ++++++++------
+ frontend/src/components/layout/DashboardLayout.jsx |  51 +++++++
+ frontend/src/components/layout/Sidebar.jsx         | 153 +++++++++++++++++++++
+ frontend/src/components/layout/TopBar.jsx          |  38 +++++
+ frontend/src/components/ui/Badge.jsx               |  56 ++++++++
+ frontend/src/components/ui/Card.jsx                |  30 ++++
+ frontend/src/components/ui/EmptyState.jsx          |  39 ++++++
+ frontend/src/components/ui/Skeleton.jsx            |  42 ++++++
+ frontend/src/components/ui/StatCard.jsx            |  60 ++++++++
+ frontend/src/services/student.service.js           |  38 +++++
+ 10 files changed, 570 insertions(+), 40 deletions(-)
+
+commit 52c0031db441f1af5a3700ddc17881ea67b5c5c5
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Mon Apr 6 14:28:47 2026 +0530
+
+    test: add student endpoint integration tests - profile CRUD, room, dashboard stats
+
+ backend/src/controllers/student.controller.js | 265 +++++++++++++++++++++++
+ backend/src/routes/v1/index.js                |   7 +-
+ backend/src/routes/v1/student.routes.js       | 109 ++++++++++
+ backend/src/validations/student.validation.js |  84 ++++++++
+ backend/tests/integration/student.test.js     | 299 ++++++++++++++++++++++++++
+ 5 files changed, 760 insertions(+), 4 deletions(-)
+
+commit 86ca87c70e623de85942b0a4f4f41c096bbc9a42
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Mon Apr 6 14:26:36 2026 +0530
+
+    feat: add student profile, room, and dashboard-stats endpoints with validation
+
+ frontend/package.json                              |   9 +-
+ .../components/__tests__/ProtectedRoute.test.jsx   |  99 ++++++++++++++
+ frontend/src/components/shared/ProtectedRoute.jsx  | 148 +++++++++++++--------
+ frontend/vite.config.js                            |  35 +++--
+ 4 files changed, 226 insertions(+), 65 deletions(-)
+
+commit f105239ec1cebcd06e8f3081ddcc809638445afd
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Mon Apr 6 13:37:25 2026 +0530
+
+    feat: add student pages - Overview dashboard, Profile editor, Room allocation view
+
+ backend/.env.example                    |   4 +-
+ backend/src/app.js                      |   2 +-
+ backend/src/config/env.js               |   2 +-
+ backend/src/config/logger.js            |   2 +-
+ backend/src/utils/pagination.js         |   2 +-
+ frontend/.env.example                   |   2 +-
+ frontend/src/lib/axios.js               |   2 +-
+ frontend/src/pages/student/Overview.jsx | 276 +++++++++++++++++++
+ frontend/src/pages/student/Profile.jsx  | 470 ++++++++++++++++++++++++++++++++
+ frontend/src/pages/student/Room.jsx     | 242 ++++++++++++++++
+ 10 files changed, 996 insertions(+), 8 deletions(-)
+
+commit 87bc07365ee773e074e981abcba8edbbb1c6fb33
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Sat Apr 4 15:36:46 2026 +0530
+
+    feat: setup frontend auth - Router, AuthContext, ProtectedRoute, Landing, Login, Register, OAuth callback
+
+ backend/src/middleware/rateLimiter.js             |   2 +
+ backend/src/middleware/validate.js                |   2 +-
+ backend/tests/integration/auth.test.js            | 408 ++++++++++++++++++++++
+ frontend/src/App.jsx                              | 117 ++++++-
+ frontend/src/components/shared/ErrorBoundary.jsx  |  73 ++++
+ frontend/src/components/shared/ProtectedRoute.jsx |  58 +++
+ frontend/src/context/AuthContext.jsx              | 207 +++++++++++
+ frontend/src/pages/errors/NotFound.jsx            |  31 ++
+ frontend/src/pages/public/Landing.jsx             | 143 ++++++++
+ frontend/src/pages/public/Login.jsx               | 203 +++++++++++
+ frontend/src/pages/public/OAuthCallback.jsx       |  53 +++
+ frontend/src/pages/public/Register.jsx            | 191 ++++++++++
+ 12 files changed, 1477 insertions(+), 11 deletions(-)
+
+commit 8895236977b24e63c60a7bd01ffa5575a15c0eb3
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 20:58:16 2026 +0530
+
+    feat: add Google OAuth login with Passport.js strategy and callback
+
+ backend/src/app.js                         |   5 +
+ backend/src/config/passport.js             |  84 ++++++++++++
+ backend/src/controllers/auth.controller.js | 172 +++++++++++++++++++++++
+ backend/src/middleware/auth.js             | 128 +++++++++++++++++
+ backend/src/routes/v1/auth.routes.js       | 211 +++++++++++++++++++++++++++++
+ backend/src/routes/v1/index.js             |  29 +---
+ backend/src/utils/token.js                 |  32 +++++
+ backend/src/validations/auth.validation.js |  59 ++++++++
+ 8 files changed, 697 insertions(+), 23 deletions(-)
+
+commit 11132c960bb5fae2c3df596033fd6fce8dba2b5b
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 15:29:26 2026 +0530
+
+    test: add unit tests for User model, Room model, Outpass model, and auto-escalation utility
+
+ backend/src/models/Outpass.js               |   4 +-
+ backend/src/models/Room.js                  |   6 +-
+ backend/src/models/User.js                  |   4 +-
+ backend/tests/unit/models/outpass.test.js   | 128 ++++++++++++
+ backend/tests/unit/models/room.test.js      | 257 +++++++++++++++++++++++++
+ backend/tests/unit/models/user.test.js      | 289 ++++++++++++++++++++++++++++
+ backend/tests/unit/utils/escalation.test.js | 166 ++++++++++++++++
+ 7 files changed, 847 insertions(+), 7 deletions(-)
+
+commit 5eefd5ed0f7f3130cb08780c990c164a10a2e634
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 15:16:24 2026 +0530
+
+    feat: add pagination utility, auto-escalation logic, and admin seed script
+
+ backend/src/models/User.js      |  5 ++-
+ backend/src/seeds/admin.seed.js | 67 ++++++++++++++++++++++++++++++
+ backend/src/utils/escalation.js | 55 +++++++++++++++++++++++++
+ backend/src/utils/pagination.js | 91 +++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 216 insertions(+), 2 deletions(-)
+
+commit 9ebe6861a9756e060fa72acedcc2a7361da1a28a
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 14:58:00 2026 +0530
+
+    feat: create all database models - User, Student, Room, HostelConfig, Complaint, Outpass, Payment
+
+ backend/src/models/Complaint.js    | 125 ++++++++++++++++++++++++++
+ backend/src/models/HostelConfig.js |  51 +++++++++++
+ backend/src/models/Outpass.js      |  98 ++++++++++++++++++++
+ backend/src/models/Payment.js      |  95 ++++++++++++++++++++
+ backend/src/models/Room.js         | 128 ++++++++++++++++++++++++++
+ backend/src/models/Student.js      | 176 ++++++++++++++++++++++++++++++++++++
+ backend/src/models/User.js         | 179 +++++++++++++++++++++++++++++++++++++
+ 7 files changed, 852 insertions(+)
+
+commit 8007a0a655c95ebf92087cbdfcedfae1a6a8f1f9
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 14:39:26 2026 +0530
+
+    feat: setup API v1 route structure with version prefix
+
+ backend/src/app.js             |  7 +++++--
+ backend/src/routes/v1/index.js | 35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+), 2 deletions(-)
+
+commit 2eb4bc55525bbeca68bb93735f769c47d2dae16f
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 14:30:36 2026 +0530
+
+    test: setup testing infrastructure and add health check integration tests
+
+ backend/jest.config.js                   |  25 +++++++
+ backend/tests/helpers/createTestUser.js  |  45 +++++++++++++
+ backend/tests/helpers/getAuthToken.js    |  31 +++++++++
+ backend/tests/integration/health.test.js |  45 +++++++++++++
+ backend/tests/setup.js                   |  19 ++++++
+ frontend/.env.example                    |   1 +
+ frontend/package.json                    |   6 +-
+ frontend/src/lib/axios.js                | 110 +++++++++++++++++++++++++++++++
+ frontend/src/test/setup.js               |  14 ++++
+ 9 files changed, 294 insertions(+), 2 deletions(-)
+
+commit 70271a1d7f582bf42dac55afd74bc4dac3e83e28
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 14:20:03 2026 +0530
+
+    feat: setup frontend with Vite, React, Tailwind CSS, and all dependencies
+
+ frontend/.gitignore          |   24 +
+ frontend/README.md           |   16 +
+ frontend/eslint.config.js    |   29 +
+ frontend/index.html          |   17 +
+ frontend/package-lock.json   | 4536 ++++++++++++++++++++++++++++++++++++++++++
+ frontend/package.json        |   41 +
+ frontend/public/favicon.svg  |    1 +
+ frontend/public/icons.svg    |   24 +
+ frontend/src/App.jsx         |   16 +
+ frontend/src/assets/hero.png |  Bin 0 -> 44919 bytes
+ frontend/src/index.css       |   84 +
+ frontend/src/main.jsx        |   26 +
+ frontend/vite.config.js      |   23 +
+ 13 files changed, 4837 insertions(+)
+
+commit edaf5d7b2e892c9cabf2542e38064c5f660526d3
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 13:59:45 2026 +0530
+
+    feat: setup Swagger API documentation at /api-docs
+
+ backend/src/app.js            |  6 ++--
+ backend/src/config/swagger.js | 69 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 73 insertions(+), 2 deletions(-)
+
+commit c174a016273ca284d87221a6045e2b8233262c56
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 13:54:47 2026 +0530
+
+    feat: setup Express app with security middleware, logging, error handling, and graceful shutdown
+
+ backend/src/app.js    | 103 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ backend/src/server.js |  89 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 192 insertions(+)
+
+commit 132c70c284d5970454827a400feda4381509eb6d
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 13:21:45 2026 +0530
+
+    chore: setup backend core - env config, database, logger, error handling, validation, rate limiter
+
+ backend/.env.example                   |   18 +
+ backend/package-lock.json              | 6723 ++++++++++++++++++++++++++++++++
+ backend/package.json                   |   42 +
+ backend/src/config/db.js               |   19 +
+ backend/src/config/env.js              |   52 +
+ backend/src/config/logger.js           |   47 +
+ backend/src/middleware/errorHandler.js |   79 +
+ backend/src/middleware/rateLimiter.js  |   33 +
+ backend/src/middleware/validate.js     |   45 +
+ backend/src/utils/AppError.js          |   27 +
+ backend/src/utils/response.js          |   50 +
+ 11 files changed, 7135 insertions(+)
+
+commit d4b112b4fd71768bedcef98143327651194f9e99
+Author: Mahi Jadeja <mahijadeja0409@gmail.com>
+Date:   Fri Apr 3 12:38:29 2026 +0530
+
+    chore: initialize project structure with monorepo layout
+
+ .gitignore   | 29 +++++++++++++++++++++++++++++
+ package.json | 15 +++++++++++++++
+ 2 files changed, 44 insertions(+)
