@@ -31,6 +31,9 @@ import AdminOutpass from './pages/admin/Outpass';
 
 // Error pages
 import NotFound from './pages/errors/NotFound';
+// Add import at top
+import CompleteProfile from './pages/public/CompleteProfile';
+
 
 const StudentLayout = () => (
   <DashboardLayout>
@@ -76,7 +79,9 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/auth/callback" element={<OAuthCallback />} />
             <Route path="/outpass/guardian-action/:token" element={<GuardianAction />} />
-
+            // Add route — PUBLIC but requires auth token (Google user already has token)
+            // Place it BEFORE the student/admin routes
+            <Route path="/complete-profile" element={<CompleteProfile />} />
             {/* ======== STUDENT ROUTES ======== */}
             <Route
               path="/student"

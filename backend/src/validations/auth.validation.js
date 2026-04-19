@@ -3,13 +3,6 @@ import { BRANCHES, STUDENT_GENDERS } from '../constants/enums.js';
 
 /**
  * Registration validation schema
- *
- * New required registration fields:
- * - gender
- * - branch
- * - guardian.name
- * - guardian.phone
- * - guardian.email
  */
 export const registerSchema = z.object({
   name: z
@@ -30,15 +23,11 @@ export const registerSchema = z.object({
     .max(100, 'Password cannot exceed 100 characters'),
 
   gender: z.enum(STUDENT_GENDERS, {
-    errorMap: () => ({
-      message: 'Gender must be either male or female',
-    }),
+    errorMap: () => ({ message: 'Gender must be either male or female' }),
   }),
 
   branch: z.enum(BRANCHES, {
-    errorMap: () => ({
-      message: 'Please select a valid branch',
-    }),
+    errorMap: () => ({ message: 'Please select a valid branch' }),
   }),
 
   guardian: z.object({
@@ -75,4 +64,40 @@ export const loginSchema = z.object({
   password: z
     .string({ required_error: 'Password is required' })
     .min(1, 'Password is required'),
+});
+
+/**
+ * Complete Profile Schema — for Google OAuth users only
+ *
+ * Same fields as registration except name/email/password
+ * (those are already set from Google profile data)
+ */
+export const completeProfileSchema = z.object({
+  gender: z.enum(STUDENT_GENDERS, {
+    errorMap: () => ({ message: 'Gender must be either male or female' }),
+  }),
+
+  branch: z.enum(BRANCHES, {
+    errorMap: () => ({ message: 'Please select a valid branch' }),
+  }),
+
+  guardian: z.object({
+    name: z
+      .string({ required_error: 'Guardian name is required' })
+      .trim()
+      .min(2, 'Guardian name must be at least 2 characters')
+      .max(50, 'Guardian name cannot exceed 50 characters'),
+
+    phone: z
+      .string({ required_error: 'Guardian phone is required' })
+      .trim()
+      .min(7, 'Guardian phone must be at least 7 characters')
+      .max(15, 'Guardian phone cannot exceed 15 characters'),
+
+    email: z
+      .string({ required_error: 'Guardian email is required' })
+      .trim()
+      .email('Please provide a valid guardian email')
+      .toLowerCase(),
+  }),
 });
